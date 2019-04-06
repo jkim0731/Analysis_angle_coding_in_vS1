@@ -55,7 +55,7 @@ function [glm, ca, spk] = glm_results_cell_function(mouse, session, baseDir)
 
 %% basic settings
 chi2pvalThreshold = 0.001; % less than 0.001 for fitting
-deThreshold = 0.1; % include 0.1 as fit
+deThreshold = 0.05; % include 0.1 as fit
 coeffThreshold = 0.01; % include 0.01 as a coefficient
 repeat = 10;
 glm = struct;
@@ -73,7 +73,7 @@ spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
-
+u = u;
 %% select cells with average DE > deThreshold (0.1) and average coefficients
 averageDE = zeros(length(u.cellNums),1);
 allCoeff = cell(length(u.cellNums),repeat);
@@ -83,6 +83,9 @@ for ri = 1 : repeat
     allCoeff(:,ri) = fitCoeffs;
 end
 load(sprintf('%s%02d',glmfnBase, repeat), 'allPredictors', 'indPartial', 'posShift')
+allPredictors = allPredictors;
+indPartial = indPartial;
+posShift = posShift;
 averageCoeff = cell(length(u.cellNums),1);
 for ci = 1 : length(u.cellNums)
     tempCoeff = mean(cell2mat(allCoeff(ci,:)),2);
@@ -93,7 +96,7 @@ cellFitInd = find(averageDE >= deThreshold);
 
 %% assigning functions to each cell
 cellFunction = cell(length(cellFitInd), 1);
-for ci = 1 : length(cellFitInd)
+parfor ci = 1 : length(cellFitInd)
     cID = u.cellNums(cellFitInd(ci));
     tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
     cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);
@@ -183,7 +186,7 @@ for ci = 1 : length(touchFitInd)
         tunedInd(ind) = 1;
         coeffSum = zeros(length(angles),1);
         for ai = 1 : length(angles)            
-            coeffSum(ai) = sum(coeff(angleCoeffInd{ai})+1); % either excited or inhibited
+            coeffSum(ai) = sum(coeff(angleCoeffInd{ai}+1)); % either excited or inhibited
         end
         [~, maxInd] = max(abs(coeffSum));
         tunedAngle(ind) = angles(maxInd);

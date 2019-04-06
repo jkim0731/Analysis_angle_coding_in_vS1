@@ -3,10 +3,11 @@
 
 % load u and, if it exists, ANOVA tuning file
 clear
-mice = [25,27,30,36,37,39,52,53,54,56,70,74,75,76];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[1,22],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
-% mice = [39,52,53,54,56];
-% sessions = {[22],[3,21],[3],[3],[3]};  
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
+% mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
+mice = [38,41];
+sessions = {[2],[3]};  
 
         % settings
         angles = 45:15:135;
@@ -36,11 +37,15 @@ sessions = {[4,19],[3,16],[3,21],[1,17],[7],[1,22],[3,21],[3],[3],[3],[6],[4],[4
         allowOverlap = 0;
         
 for mi = 1 : length(mice)
+    mouse = mice(mi);
+    cd(sprintf('%s%03d',baseDir,mouse))
 % for mi = 1
     for si = 1 : length(sessions{mi})
 %     for si = 1
-
-        u = Uber.buildUberArray(mice(mi), sessions{mi}(si));
+        session = sessions{mi}(si);
+        ufn = sprintf('UberJK%03dS%02d',mouse, session);
+        load(ufn)
+%         u = Uber.buildUberArray(mice(mi), sessions{mi}(si));
         
         % still some settings
         frameRate = u.frameRate;
@@ -100,7 +105,7 @@ for mi = 1 : length(mice)
         
                 
         for cellid = 1:length(u.cellNums)
-            disp(['Processing cell id ', num2str(cellid)])
+            fprintf('Processing mouse #%03d session #%02d cell id %04d / %d\n', mice(mi), sessions{mi}(si), cellid, length(u.cellNums))
             cellNum = u.cellNums(cellid);
             touchNumTrial = cell(length(angles),1);
             touchNumChunk = cell(length(angles),1);
@@ -269,8 +274,8 @@ for mi = 1 : length(mice)
             pairComp = multcompare(anovaStat, 'Ctype', anovactype, 'Display', 'off');                        
             statMeans = cellfun(@(x) mean(nanmean(x(:,baseFrameNum+frames),2)), dF);
             
-            oneSampleH(cellid,:) = cellfun(@(x) ttest(nanmean(x(:,baseFrameNum+frames),2)), dF);
-            oneSampleInd = find(oneSampleH(cellid,:));
+            tempH = cellfun(@(x) ttest(nanmean(x(:,baseFrameNum+frames),2)), dF);
+            oneSampleInd = find(tempH);
             
             [~, responseP(cellid)] = ttest(timeAveragedF); % regardless of the angles.
             meanTotal(cellid) = mean(timeAveragedF);
@@ -391,11 +396,11 @@ for mi = 1 : length(mice)
                     temp = pairComp(testInd(sigInd),1:2);
                     sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
                     if ~isempty(find(diff(insigIndGroup)>1,1))
-                        if sum(oneSampleH(cellid,sigIndGroup))
+                        if sum(tempH(sigIndGroup))
                             tuneMM = [tuneMM; cellNum]; % multimodal. Including bipolar.
                         end
                         if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
-                                all(oneSampleH(cellid,insigIndGroup)) % and all insignicant indices are different from 0
+                                all(tempH(insigIndGroup)) % and all insignicant indices are different from 0
                             tuneLOO = [tuneLOO; cellNum]; % leave-one-out. Part of multimodal in definition.
                         end                            
                     end
@@ -523,6 +528,7 @@ for mi = 1 : length(mice)
                     cellsNTNR = [cellsNTNR; cellNum];
                 end
             end
+            oneSampleH(cellid,:) = tempH;
         end
         
         noise = u.noise;

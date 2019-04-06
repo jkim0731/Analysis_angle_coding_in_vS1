@@ -1,6 +1,8 @@
 clear
-mice = [25,27,30,36,37,39,52,53,54,56,70,74,75,76];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[1,22],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
+% mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
+mice = [38,41];
+sessions = {[2],[3]};
 
 numResampling = 10000;
 
@@ -16,7 +18,7 @@ for mi = 1 : length(mice)
         anovaP = cell(length(dat.cellsTuned),1);
         permmaxmod = cell(length(dat.cellsTuned),1);
         parfor ci = 1 : length(dat.cellsTuned)
-            fprintf('%d/%d\n', ci, length(dat.cellsTuned))
+            fprintf('%d/%d in JK%03d S%02d\n', ci, length(dat.cellsTuned), mice(mi), sessions{mi}(si))
             dF = dat.dFtotal{dat.cellsTotal==dat.cellsTuned(ci)};
             
             groupNums = cellfun(@(x) size(x,1), dF);
@@ -54,7 +56,7 @@ for mi = 1 : length(mice)
         anovaP = cell(length(dat.cellsTuned),1);
         permmaxmod = cell(length(dat.cellsTuned),1);
         parfor ci = 1 : length(dat.cellsTuned)
-            fprintf('%d/%d\n', ci, length(dat.cellsTuned))
+            fprintf('%d/%d in JK%03d S%02d\n', ci, length(dat.cellsTuned), mice(mi), sessions{mi}(si))
             infspk = dat.spkTotal{dat.cellsTotal==dat.cellsTuned(ci)};
             
             groupNums = cellfun(@(x) size(x,1), infspk);

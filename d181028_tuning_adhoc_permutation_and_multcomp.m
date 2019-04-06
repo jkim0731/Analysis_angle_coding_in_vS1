@@ -1,6 +1,8 @@
 clear
-mice = [25,27,30,36,37,39,52,53,54,56,70,74,75,76];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[1,22],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
+% mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
+mice = [38,41];
+sessions = {[2],[3]};
 
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
 
@@ -14,8 +16,12 @@ for mi = 1 : length(mice)
 % for mi = 6:length(mice)  
     cd([baseDir, sprintf('%03d',mice(mi))])
     for si = 1 : length(sessions{mi})
+        mouse = mice(mi);
+        session = sessions{mi}(si);
         fprintf('Processing JK%03d S%02d \n', mice(mi), sessions{mi}(si));
-        u = Uber.buildUberArray(mice(mi), sessions{mi}(si));        
+        ufn = sprintf('UberJK%03dS%02d',mouse, session);
+        load(ufn)
+%         u = Uber.buildUberArray(mice(mi), sessions{mi}(si));        
         frameRate = u.frameRate;
         fn = [u.mouseName,u.sessionName,'singleCell_anova_calcium.mat']; %
         savefn = [u.mouseName,u.sessionName,'singleCell_anova_calcium_final.mat']; 
@@ -216,9 +222,13 @@ percentFailSharpness = zeros(sum(cellfun(@(x) length(x), sessions)),1);
 for mi = 1 : length(mice)
 % for mi = 6:length(mice)  
     cd([baseDir, sprintf('%03d',mice(mi))])
-    for si = 1 : length(sessions{mi})
+    for si = 1 : length(sessions{mi})        
+        mouse = mice(mi);
+        session = sessions{mi}(si);
         fprintf('Processing JK%03d S%02d \n', mice(mi), sessions{mi}(si));
-        u = Uber.buildUberArray(mice(mi), sessions{mi}(si));        
+        ufn = sprintf('UberJK%03dS%02d',mouse, session);
+        load(ufn)
+%         u = Uber.buildUberArray(mice(mi), sessions{mi}(si));        
         frameRate = u.frameRate;
         fn = [u.mouseName,u.sessionName,'singleCell_anova_spk.mat']; %
         savefn = [u.mouseName,u.sessionName,'singleCell_anova_spk_final.mat']; 
