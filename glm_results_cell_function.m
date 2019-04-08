@@ -1,4 +1,4 @@
-function [glm, ca, spk] = glm_results_cell_function(mouse, session, baseDir)
+function glm = glm_results_cell_function(mouse, session, baseDir)
 
 %% For figure 3. GLM result plots fro function assignment in each cell
 % Notes:
@@ -53,22 +53,26 @@ function [glm, ca, spk] = glm_results_cell_function(mouse, session, baseDir)
 
 % 2019/04/02 JK
 
+
+% Updates:
+% Forget about tuning here. It can't be well inferred from glm. 2019/04/08 JK
+
 %% basic settings
-chi2pvalThreshold = 0.001; % less than 0.001 for fitting
+% chi2pvalThreshold = 0.001; % less than 0.001 for fitting
 deThreshold = 0.05; % include 0.1 as fit
-coeffThreshold = 0.01; % include 0.01 as a coefficient
+coeffThreshold = 0; % include 0.01 as a coefficient
 repeat = 10;
 glm = struct;
-ca = struct;
-spk = struct;
+% ca = struct;
+% spk = struct;
 L4depth = 350; % include 350 um as L4 (350 is the starting point)
-angles = 45:15:135;
+% angles = 45:15:135;
 
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m44_R', mouse, session);
-cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
-spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+% cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
+% spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))
@@ -92,12 +96,12 @@ for ci = 1 : length(u.cellNums)
     tempCoeff(abs(tempCoeff) < coeffThreshold) = deal(0);
     averageCoeff{ci} = tempCoeff;
 end
-cellFitInd = find(averageDE >= deThreshold);
+deFitInd = find(averageDE >= deThreshold);
 
 %% assigning functions to each cell
-cellFunction = cell(length(cellFitInd), 1);
-parfor ci = 1 : length(cellFitInd)
-    cID = u.cellNums(cellFitInd(ci));
+cellFunction = cell(length(deFitInd), 1);
+parfor ci = 1 : length(deFitInd)
+    cID = u.cellNums(deFitInd(ci));
     tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
     cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);
     planeInd = floor(cID/1000);
@@ -112,7 +116,7 @@ parfor ci = 1 : length(cellFitInd)
     finiteIndTest = intersect(find(isfinite(spkTest)), find(isfinite(sum(testInput,2))));
     spkTest = spkTest(finiteIndTest);
 
-    coeff = averageCoeff{cellFitInd(ci)};
+    coeff = averageCoeff{deFitInd(ci)};
     coeffInds = find(coeff(2:end));
     model = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,:)]*coeff);
     mu = mean(spkTest); % null poisson parameter
@@ -124,7 +128,8 @@ parfor ci = 1 : length(cellFitInd)
     dfFull = length(coeffInds);
     
     tempFit = zeros(1,length(indPartial) + 1);
-    if devExplained >= deThreshold && devianceFullNull > chi2inv(1-chi2pvalThreshold, dfFull) % re-evaluation led to full model fit
+%     if devExplained >= deThreshold && devianceFullNull > chi2inv(1-chi2pvalThreshold, dfFull) % re-evaluation led to full model fit
+    if devExplained >= deThreshold  % for ridge
         tempFit(1) = 1;
         for pi = 1 : length(indPartial)
             if sum(ismember(coeffInds, indPartial{pi})) > 0
@@ -136,7 +141,8 @@ parfor ci = 1 : length(cellFitInd)
                 DEdiff = devExplained - devExpPartial;
                 devianceFullPartial = 2*(fullLogLikelihood - partialLogLikelihood);
                 dfPartial = length(find(coeff(resInd+1)));
-                if DEdiff >= deThreshold && devianceFullPartial > chi2inv(1-chi2pvalThreshold, dfFull - dfPartial)
+%                 if DEdiff >= deThreshold && devianceFullPartial > chi2inv(1-chi2pvalThreshold, dfFull - dfPartial)
+                if DEdiff >= deThreshold % for ridge    
                     tempFit(pi+1) = 1;
                 end
             end
@@ -149,12 +155,12 @@ parfor ci = 1 : length(cellFitInd)
 end
 
 %% re-assigning based on the calculation above, and assigning 
-allFit = cell2mat(cellFunction);
-allFitInd = find(allFit(:,1));
-fitInd = cellFitInd(allFitInd);
+deFit = cell2mat(cellFunction);
+finalFitInd = find(deFit(:,1)); % indices from average DE>0.1 cells
+fitInd = deFitInd(finalFitInd); % indices from all cells
 glm.cellFitID = u.cellNums(fitInd);
-glm.cellFunction = cellfun(@(x) x(2:end), cellFunction(allFitInd), 'uniformoutput', false);
-averageCoeff = averageCoeff(allFitInd);
+glm.cellFunction = cellfun(@(x) x(2:end), cellFunction(finalFitInd), 'uniformoutput', false);
+% averageCoeff = averageCoeff(fitInd);
 
 %% transfer information from u to glm
 glm.cellFitIndC2 = find(u.isC2(fitInd));
@@ -166,52 +172,72 @@ glm.cellNums = u.cellNums;
 glm.cellDepths = u.cellDepths;
 glm.isC2 = u.isC2;
 
-%% finding tuning
-% here, simply assume anything that has coefficient in indPartial{1}, other
-% than all touch coefficients (mod(x,8) ~=0)
-allFit = cell2mat(glm.cellFunction);
-touchFitInd = find(allFit(:,1));
-tunedInd = zeros(size(allFit,1),1);
-tunedAngle = zeros(size(allFit,1),1);
-tuneDirection = zeros(size(allFit,1),1);
-tuneCoeffInd = setdiff(indPartial{1}, find(mod(indPartial{1},length(angles)+1)==0));
-angleCoeffInd = cell(length(angles),1);
-for ai = 1 : length(angles)
-    angleCoeffInd{ai} = find(mod(indPartial{1},length(angles)+1) == ai);
-end
-for ci = 1 : length(touchFitInd)
-    ind = touchFitInd(ci);    
-    coeff = averageCoeff{ind};
-    if ~isempty(find(coeff(tuneCoeffInd+1)))
-        tunedInd(ind) = 1;
-        coeffSum = zeros(length(angles),1);
-        for ai = 1 : length(angles)            
-            coeffSum(ai) = sum(coeff(angleCoeffInd{ai}+1)); % either excited or inhibited
-        end
-        [~, maxInd] = max(abs(coeffSum));
-        tunedAngle(ind) = angles(maxInd);
-        if coeffSum(maxInd) > 0
-            tuneDirection(ind) = 1;
-        else
-            tuneDirection(ind) = 2;
-        end
-    end
-end
-glm.tunedID = glm.cellFitID(find(tunedInd));
-glm.tunedAngle = tunedAngle(find(tunedAngle));
-glm.tuneDirection = tuneDirection(find(tuneDirection));
-glm.touchID = glm.cellFitID(setdiff(touchFitInd, find(tunedInd)));
+%% function assignment
+glm.touchID = glm.cellFitID(find(cellfun(@(x) x(1), glm.cellFunction)));
+glm.soundID = glm.cellFitID(find(cellfun(@(x) x(2), glm.cellFunction)));
+glm.rewardID = glm.cellFitID(find(cellfun(@(x) x(3), glm.cellFunction)));
+glm.whiskingID = glm.cellFitID(find(cellfun(@(x) x(4), glm.cellFunction)));
+glm.lickingID = glm.cellFitID(find(cellfun(@(x) x(5), glm.cellFunction)));
 
-%% transfer information fron anova results
-cadat = load(cafn);
-ca.tunedID = cadat.cellsTuned;
-ca.tunedAngle = cadat.tuneAngle;
-ca.tuneDirection = cadat.tuneDirection;
-ca.touch = cadat.cellsNTResponse;
-
-spkdat = load(spkfn);
-spk.tunedID = spkdat.cellsTuned;
-spk.tunedAngle = spkdat.tuneAngle;
-spk.tuneDirection = spkdat.tuneDirection;
-spk.touch = spkdat.cellsNTResponse;
+% %% finding tuning
+% % here, simply assume anything that has coefficient in indPartial{1}, other
+% % than all touch coefficients (mod(x,8) ~=0)
+% allFit = cell2mat(glm.cellFunction); % now it's cells of (1,5), 1 touch, 2 sound, 3 reward, 4 whisking, and 5 licking
+% touchFitInd = find(allFit(:,1));
+% tunedInd = zeros(size(allFit,1),1);
+% tunedAngle = zeros(size(allFit,1),1);
+% tuneDirection = zeros(size(allFit,1),1);
+% tuneCoeffInd = setdiff(indPartial{1}, find(mod(indPartial{1},length(angles)+1)==0));
+% angleCoeffInd = cell(length(angles),1);
+% for ai = 1 : length(angles)
+%     angleCoeffInd{ai} = find(mod(indPartial{1},length(angles)+1) == ai);
+% end
+% for ci = 1 : length(touchFitInd)
+%     ind = touchFitInd(ci);
+%     coeff = averageCoeff{ind};
+%     if ~isempty(find(coeff(tuneCoeffInd+1)))
+%         tempAllCoeff = cell2mat(allCoeff(fitInd(ind),:));
+%         tuneCoeffs = zeros(repeat,length(angles));
+%         for ri = 1 : repeat
+%             for ai = 1 : length(angles)
+%                 tuneCoeffs(ri, ai) = sum(tempAllCoeff(angleCoeffInd{ai}+1,ri));
+%             end
+%         end
+%         anovaGroups = meshgrid(1:length(angles),1:repeat);        
+% %         [anovaP, ~, anovaStat] = anova1(tuneCoeffs(:), anovaGroups(:), 'off');
+% %         pairComp = multcompare(anovaStat, 'Ctype', 'hsd', 'Display', 'off');
+%         anovaP = anova1(tuneCoeffs(:), anovaGroups(:), 'off');
+%         tempH = ttest(tuneCoeffs);
+%         tempH(isnan(tempH)) = 0;
+%         if anovaP < 0.01 && sum(tempH) > 0 % angle-tuned
+%             tunedInd(ind) = 1;
+%             tempHind = find(tempH);
+%             avgTuning = mean(tuneCoeffs);
+%             [~,maxIndind] = max(abs(avgTuning(tempHind)));            
+%             tunedAngle(ind) = angles(tempHind(maxIndind));
+%             if avgTuning(tempHind(maxIndind)) > 0
+%                 tuneDirection(ind) = 1;
+%             else
+%                 tuneDirection(ind) = 2;
+%             end
+%         end
+%     end
+% end
+% glm.tunedID = glm.cellFitID(find(tunedInd));
+% glm.tunedAngle = tunedAngle(find(tunedAngle));
+% glm.tuneDirection = tuneDirection(find(tuneDirection));
+% glm.touchID = glm.cellFitID(setdiff(touchFitInd, find(tunedInd)));
+% 
+% %% transfer information fron anova results
+% cadat = load(cafn);
+% ca.tunedID = cadat.cellsTuned;
+% ca.tunedAngle = cadat.tuneAngle;
+% ca.tuneDirection = cadat.tuneDirection;
+% ca.touch = cadat.cellsNTResponse;
+% 
+% spkdat = load(spkfn);
+% spk.tunedID = spkdat.cellsTuned;
+% spk.tunedAngle = spkdat.tuneAngle;
+% spk.tuneDirection = spkdat.tuneDirection;
+% spk.touch = spkdat.cellsNTResponse;
 

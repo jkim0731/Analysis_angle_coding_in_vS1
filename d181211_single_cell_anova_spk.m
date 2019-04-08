@@ -4,10 +4,10 @@
 % load u and, if it exists, ANOVA tuning file
 clear
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
-% mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
-% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
-mice = [38,41];
-sessions = {[2],[3]};  
+mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};  
+% mice = [38,41];
+% sessions = {[2],[3]};  
 
         % settings
         angles = 45:15:135;
@@ -32,7 +32,7 @@ sessions = {[2],[3]};
 %             onlyAfterDecision = 1;
 %         end
         
-        onlyFirstTouch = 1;
+        onlyFirstTouch = 0;
         allowOverlap = 0;
         
 for mi = 1 : length(mice)    
@@ -267,7 +267,7 @@ for mi = 1 : length(mice)
             end
             
             [anovaP(cellid), ~, anovaStat] = anova1(timeAverageSpk, anovaGroups, 'off');
-            pairComp = multcompare(anovaStat, 'Ctype', anovactype, 'Display', 'off');                        
+            pairComp = multcompare(anovaStat, 'Ctype', anovactype, 'Display', 'off');
             statMeans = cellfun(@(x) mean(nanmean(x(:,baseFrameNum+frames),2)), spk);
             
             tempH = cellfun(@(x) ttest(nanmean(x(:,baseFrameNum+frames),2)), spk);
