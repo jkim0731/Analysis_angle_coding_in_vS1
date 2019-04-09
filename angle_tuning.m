@@ -20,7 +20,7 @@
 
 % settings
 clear
-baseDir = 'C:\Data\suite2p\';
+baseDir = 'C:\JK\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 naiveMi = 1:12;
@@ -42,12 +42,12 @@ numResampling = 10000; % permutation test
 cd(baseDir)
 load('cellFunctionRidgeDE010.mat')
 
-% for mi = 1 : length(mice)    
-for mi = 1
+for mi = 1 : length(mice)    
+% for mi = 1
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-%     for si = 1 : length(sessions{mi})
-    for si = 1
+    for si = 1 : length(sessions{mi})
+%     for si = 1
 
         session = sessions{mi}(si);
         
@@ -224,13 +224,13 @@ for mi = 1
                     tunedAngleInd = sigInd(maxind);
                     catunedAngle(ci) = angles(tunedAngleInd);
 
-                    [~, maxind] = max(caMeans(sigInd));
-                    [~, minind] = min(caMeans(sigInd));
-                    if caMeans(sigInd(maxind)) > 0 && caMeans(sigInd(minind)) > 0
+                    maxVal = max(caMeans(sigInd));
+                    minVal = min(caMeans(sigInd));
+                    if minVal > 0
                         catuneDirection(ci) = 1;
-                    elseif caMeans(sigInd(maxind)) < 0 
+                    elseif maxVal < 0 
                         catuneDirection(ci) = 2;
-                    elseif caMeans(sigInd(maxind)) > 0 && caMeans(sigInd(minind)) < 0
+                    elseif maxVal > 0 && minVal < 0
                         catuneDirection(ci) = 3;
                     else
                         catuneDirection(ci) = -1; % error
@@ -348,13 +348,13 @@ for mi = 1
                     tunedAngleInd = sigInd(maxind);
                     spktunedAngle(ci) = angles(tunedAngleInd);
 
-                    [~, maxind] = max(spkMeans(sigInd));
-                    [~, minind] = min(spkMeans(sigInd));
-                    if spkMeans(sigInd(maxind)) > 0 && spkMeans(sigInd(minind)) > 0
+                    maxVal = max(spkMeans(sigInd));
+                    minVal = min(spkMeans(sigInd));
+                    if minVal > 0
                         spktuneDirection(ci) = 1;
-                    elseif spkMeans(sigInd(maxind)) < 0 
+                    elseif maxVal < 0 
                         spktuneDirection(ci) = 2;
-                    elseif spkMeans(sigInd(maxind)) > 0 && spkMeans(sigInd(minind)) < 0
+                    elseif maxVal > 0 && minVal < 0
                         spktuneDirection(ci) = 3;
                     else
                         spktuneDirection(ci) = -1; % error
