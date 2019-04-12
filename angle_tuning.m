@@ -43,11 +43,11 @@ cd(baseDir)
 load('cellFunctionRidgeDE010.mat')
 
 for mi = 1 : length(mice)    
-% for mi = 1
+% for mi = 7
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
     for si = 1 : length(sessions{mi})
-%     for si = 1
+%     for si = 2
 
         session = sessions{mi}(si);
         
@@ -85,7 +85,8 @@ for mi = 1 : length(mice)
                 for ptci = 1 : length(tempFrames)
                     tempFrames{ptci} = [0:2] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
                 end
-                touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
+                tempTouchFrames = unique(cell2mat(tempFrames));
+                touchFrames{pi}{ti} = tempTouchFrames(tempTouchFrames <= length(tempTrial.tpmTime{tempInd}));
                 nonTouchFrames{pi}{ti} = setdiff(poleUpFrames{pi}{ti}, touchFrames{pi}{ti});
             end
             angleTrialInds{pi} = cell(length(angles),1); % index of planeTrialsInd{pi}
@@ -108,6 +109,8 @@ for mi = 1 : length(mice)
             touchID = touchID';
         end
         
+        uIndTouchID = find(ismember(u.cellNums, touchID));
+        
         ca.touchID = touchID;
         catuned = zeros(length(touchID),1);
         catunedAngle = zeros(length(touchID),1);
@@ -122,6 +125,7 @@ for mi = 1 : length(mice)
         casharpness = zeros(length(touchID),1);
         caNTamplitude = zeros(length(touchID),1); % for not-tuned cells
         caNTdirection = zeros(length(touchID),1); % for not-tuned cells
+        caValAll = cell(length(touchID),1);
         
         spk.touchID = touchID;
         spktuned = zeros(length(touchID),1);
@@ -136,7 +140,8 @@ for mi = 1 : length(mice)
         spkmodulation = zeros(length(touchID),1);
         spksharpness = zeros(length(touchID),1);
         spkNTamplitude = zeros(length(touchID),1); % for not-tuned cells
-        spkNTdirection = zeros(length(touchID),1); % for not-tuned cells
+        spkNTdirection = zeros(length(touchID),1); % for not-tuned cells        
+        spkValAll = cell(length(touchID),1);
         
         parfor ci = 1:length(touchID)
             fprintf('Processing JK%03d S%02d touch cell %d / %d\n', mouse, session, ci, length(touchID))
@@ -158,20 +163,21 @@ for mi = 1 : length(mice)
             % all spikes
             tempSpk = cellfun(@(x) x.spk(cind,:), u.trials(trialInds), 'uniformoutput', false);
             
-            caVal = cell(length(angles),1);
-            spkVal = cell(length(angles),1);
+            caValAll{ci} = cell(length(angles),1);
+            spkValAll{ci} = cell(length(angles),1);
             for ai = 1 : length(angles)
                 trialAngleInd = angleInds{ai};               
-                caVal{ai} = zeros(length(trialAngleInd),1);
-                spkVal{ai} = zeros(length(trialAngleInd),1);
+                caValAll{ci}{ai} = zeros(length(trialAngleInd),1);
+                spkValAll{ci}{ai} = zeros(length(trialAngleInd),1);
                 for ti = 1 : length(trialAngleInd)
                     tempInd = trialAngleInd(ti);
-                    caVal{ai}(ti) = mean(tempF{tempInd}(calciumPoleUpFrames{tempInd})) - mean(tempF{tempInd}(baselineFrames{tempInd}));
-                    spkVal{ai}(ti) = mean(tempSpk{tempInd}(spkTouchFrames{tempInd})) - mean(tempSpk{tempInd}(baselineFrames{tempInd}));
+                    caValAll{ci}{ai}(ti) = mean(tempF{tempInd}(calciumPoleUpFrames{tempInd})) - mean(tempF{tempInd}(baselineFrames{tempInd}));
+                    spkValAll{ci}{ai}(ti) = mean(tempSpk{tempInd}(spkTouchFrames{tempInd})) - mean(tempSpk{tempInd}(baselineFrames{tempInd}));
                 end
             end
             
-            
+            caVal = caValAll{ci};
+            spkVal = spkValAll{ci};
             %% ANOVA
             caAnovaVal = cell2mat(caVal);
             spkAnovaVal = cell2mat(spkVal);
@@ -455,6 +461,7 @@ for mi = 1 : length(mice)
         ca.sharpness = casharpness;
         ca.NTamplitude = caNTamplitude;
         ca.NTdirection = caNTdirection;
+        ca.val = caValAll;
         
         spk.tuned = spktuned;
         spk.tunedAngle = spktunedAngle;
@@ -469,7 +476,9 @@ for mi = 1 : length(mice)
         spk.sharpness = spksharpness;
         spk.NTamplitude = spkNTamplitude;
         spk.NTdirection = spkNTdirection;
+        spk.val = spkValAll;
         
+        info.cellID = u.cellNums;
         info.celly = u.celly;
         info.cellx = u.cellx;
         info.c2ypoints = u.c2ypoints;
