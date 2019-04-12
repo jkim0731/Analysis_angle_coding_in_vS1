@@ -152,6 +152,8 @@ parfor ci = 1 : numCells
         tempExclusionER = zeros(1,length(indPartial));
         permER = zeros(length(indPartial),numPermute);
         permWTV = zeros(6,numPermute);
+        tempWVDEdiff = zeros(1,6);
+        tempWTVexclusionER = zeros(1,6);
         for pi = 1 : length(indPartial)
             %% exclusion method
             partialInds = setdiff(1:length(coeff), indPartial{pi}+1); % including intercept
@@ -390,8 +392,7 @@ parfor ci = 1 : numCells
                         end
                     end
                     
-                    tempWVDEdiff = zeros(1,6);
-                    tempWTVexclusionER = zeros(1,6);
+                    
                     for j = 1 : 6
                         partialInds = setdiff(1:length(coeff), indPartial{pi}((j-1)*3+1:j*3) + 1); % including intercept
                         partialCoeffs = coeff(partialInds);
