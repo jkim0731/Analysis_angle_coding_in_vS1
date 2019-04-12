@@ -390,14 +390,16 @@ parfor ci = 1 : numCells
                         end
                     end
                     
+                    tempWVDEdiff = zeros(1,6);
+                    tempWTVexclusionER = zeros(1,6);
                     for j = 1 : 6
                         partialInds = setdiff(1:length(coeff), indPartial{pi}((j-1)*3+1:j*3) + 1); % including intercept
                         partialCoeffs = coeff(partialInds);
                         partialModel = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,partialInds(2:end)-1)]*partialCoeffs);
                         partialLogLikelihood = sum(log(poisspdf(spkTest',partialModel)));
                         partialDevExp = (partialLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
-                        whiskerVariableDEdiff(ci,j) = devExplained - partialDevExp;            
-                        whiskerVariableExclusionER(ci,j) = (saturatedLogLikelihood - partialLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+                        tempWVDEdiff(j) = devExplained - partialDevExp;            
+                        tempWTVexclusionER(j) = (saturatedLogLikelihood - partialLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
                     end
             end
             
@@ -407,7 +409,8 @@ parfor ci = 1 : numCells
 %         end
 %     end
 %     cellFunction{ci} = tempFit;
-
+    whiskerVariableDEdiff(ci,:) = tempWVDEdiff;
+    whiskerVariableExclusionER(ci,:) = tempWTVexclusionER;
     deviance(ci) = tempDeviance;
     errorRatio{ci} = permER;
     devExp(ci) = devExplained;
