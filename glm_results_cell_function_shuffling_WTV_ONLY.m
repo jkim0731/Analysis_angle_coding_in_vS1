@@ -1,6 +1,10 @@
-function glm = glm_results_cell_function_shuffling(mouse, session, baseDir)
+function glm = glm_results_cell_function_shuffling_WTV_ONLY(mouse, session, baseDir)
 
 %% For figure 3. GLM result plots fro function assignment in each cell
+%%
+% same as in "glm_results_cell_function_shuffling", except that
+% touch angles are replaced by whisker touch variables
+
 % Notes:
 %     Assume u is fixed. No change of u.cellNums (very important in indexing)
 %     After running 10 repeats of glmnet_cell_tupe.m
@@ -66,7 +70,7 @@ function glm = glm_results_cell_function_shuffling(mouse, session, baseDir)
 
 %% basic settings
 % chi2pvalThreshold = 0.001; % less than 0.001 for fitting
-deThreshold = 0.1; % include 0.1 as fit
+deThreshold = 0.05; % include 0.1 as fit
 coeffThreshold = 0; % include 0.01 as a coefficient
 repeat = 10;
 glm = struct;
@@ -77,7 +81,7 @@ L4depth = 350; % include 350 um as L4 (350 is the starting point)
 
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+glmfnBase = sprintf('glmWhiskerTouchVariablesONLY_JK%03dS%02d_R', mouse, session);
 % cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
 % spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 
@@ -86,28 +90,27 @@ cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
 u = u;
 %% select cells with average DE > deThreshold (0.1) and average coefficients
-averageDE = zeros(length(u.cellNums),1);
-allCoeff = cell(length(u.cellNums),repeat);
+load(sprintf('%s%02d',glmfnBase, repeat), 'cIDAll', 'allPredictors', 'indPartial', 'posShift')
+cIDAll = cIDAll;
+allPredictors = allPredictors;
+indPartial = indPartial;
+posShift = posShift;
+numCells = length(cIDAll);
+
+averageDE = zeros(numCells,1);
+allCoeff = cell(numCells,repeat);
 for ri = 1 : repeat
     load(sprintf('%s%02d',glmfnBase, ri), 'fitCoeffs', 'fitDevExplained')
     averageDE = averageDE + fitDevExplained/repeat;
     allCoeff(:,ri) = fitCoeffs;
 end
-load(sprintf('%s%02d',glmfnBase, repeat), 'allPredictors', 'indPartial', 'posShift')
-allPredictors = allPredictors;
-indPartial = indPartial;
-posShift = posShift;
-averageCoeff = cell(length(u.cellNums),1);
-for ci = 1 : length(u.cellNums)
+averageCoeff = cell(numCells,1);
+for ci = 1 : numCells
     averageCoeff{ci} = mean(cell2mat(allCoeff(ci,:)),2);
 end
 % deFitInd = find(averageDE >= deThreshold);
 
 %% assigning functions to each cell
-% cellFunction = cell(length(deFitInd), 1);
-numCells = length(u.cellNums);
-% cellFunction = cell(numCells,1);
-% deviance = cell(length(deFitInd),1);
 deviance = zeros(numCells,1);
 errorRatio = cell(numCells,1);
 devExp = zeros(numCells,1);
@@ -120,7 +123,7 @@ whiskerVariableDEdiff = zeros(numCells,6);
 parfor ci = 1 : numCells
     if ~isempty(averageCoeff{ci})
         fprintf('Processing %d/%d\n', ci, numCells)
-        cID = u.cellNums(ci);
+        cID = cIDAll(ci);
         tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
         cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);
         planeInd = floor(cID/1000);
@@ -167,8 +170,7 @@ parfor ci = 1 : numCells
 
                 %% permutation method
                 switch pi
-                    case 1 % in case of touch angles, I put every angle + all touches and then circshift 8 angles together.
-                    % # of delays are different too.
+                    case 1 % whisker touch variables. shifts 3. 11 groups in sequential shift                    
                         aptest = testInput(:,indPartial{pi}(1));
 
                         nonanind = find(~isnan(aptest));
@@ -186,12 +188,13 @@ parfor ci = 1 : numCells
                         end
                         randGroups = cell2mat(randGroups);
                         indGroups = cell2mat(indGroups);
+
                         for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:8));                    
+                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:3:31));
                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
                             for di = 1 : 3
-                                tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
+                                tempPartialInputAll(:, di : 3 : di+30 ) = ...
                                     circshift(tempPartialInputNodelay, [0 di-1]);
                             end
                             tempInput = testInput;
@@ -200,6 +203,37 @@ parfor ci = 1 : numCells
                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
                         end
+
+                        % comparing between whisker touch variables. There are
+                        % 6 of them currently
+                        % 11 of them 2019/04/16 JK
+                        for ri = 1 : numPermute
+                            for j = 1 : 11
+                                tempPartialInputNodelay = testInput(:,indPartial{pi}((j-1)*3+1));
+                                tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+                                tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), 3);
+                                for di = 1 : 3
+                                    tempPartialInputAll(:, di ) = ...
+                                        circshift(tempPartialInputNodelay, [0 di-1]);
+                                end
+                                tempInput = testInput;
+                                tempInput(:,indPartial{pi}((j-1)*3+1:j*3)) = tempPartialInputAll;
+                                permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+                                permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+                                permWTV(j,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+                            end
+                        end
+                        
+                        for j = 1 : 11
+                            partialInds = setdiff(1:length(coeff), indPartial{pi}((j-1)*3+1:j*3) + 1); % including intercept
+                            partialCoeffs = coeff(partialInds);
+                            partialModel = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,partialInds(2:end)-1)]*partialCoeffs);
+                            partialLogLikelihood = sum(log(poisspdf(spkTest',partialModel)));
+                            partialDevExp = (partialLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
+                            tempWVDEdiff(j) = devExplained - partialDevExp;            
+                            tempWTVexclusionER(j) = (saturatedLogLikelihood - partialLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+                        end
+                        
                     case 2 % in other cases, it repeats in every segment
                         % sound. shifts 3
                         aptest = testInput(:,indPartial{pi}(1));
@@ -336,72 +370,6 @@ parfor ci = 1 : numCells
                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
                         end
-                    case 6
-                        % whisker touch variables. shifts 3. 11 groups in sequential shift
-                        aptest = testInput(:,indPartial{pi}(1));
-
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:3:31));
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
-                            for di = 1 : 3
-                                tempPartialInputAll(:, di : 3 : di+30 ) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
-
-
-                        % comparing between whisker touch variables. There are
-                        % 11 of them currently 2019/04/16 JK
-
-                        for ri = 1 : numPermute
-                            for j = 1 : 11
-                                tempPartialInputNodelay = testInput(:,indPartial{pi}((j-1)*3+1));
-                                tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                                tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), 3);
-                                for di = 1 : 3
-                                    tempPartialInputAll(:, di ) = ...
-                                        circshift(tempPartialInputNodelay, [0 di-1]);
-                                end
-                                tempInput = testInput;
-                                tempInput(:,indPartial{pi}((j-1)*3+1:j*3)) = tempPartialInputAll;
-                                permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                                permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                                permWTV(j,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                            end
-                        end
-
-
-                        for j = 1 : 11
-                            partialInds = setdiff(1:length(coeff), indPartial{pi}((j-1)*3+1:j*3) + 1); % including intercept
-                            partialCoeffs = coeff(partialInds);
-                            partialModel = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,partialInds(2:end)-1)]*partialCoeffs);
-                            partialLogLikelihood = sum(log(poisspdf(spkTest',partialModel)));
-                            partialDevExp = (partialLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
-                            tempWVDEdiff(j) = devExplained - partialDevExp;            
-                            tempWTVexclusionER(j) = (saturatedLogLikelihood - partialLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
                 end
 
             end
@@ -421,7 +389,7 @@ parfor ci = 1 : numCells
     end
 end
 
-glm.cID = u.cellNums;
+glm.cID = cIDAll;
 glm.deviance = deviance;
 glm.errorRatio = errorRatio;
 glm.devExp = devExp;

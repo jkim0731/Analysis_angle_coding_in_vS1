@@ -59,7 +59,7 @@ function glm = glm_results_cell_function(mouse, session, baseDir)
 
 %% basic settings
 % chi2pvalThreshold = 0.001; % less than 0.001 for fitting
-deThreshold = 0.05; % include 0.1 as fit
+deThreshold = 0.1; % include 0.1 as fit
 coeffThreshold = 0; % include 0.01 as a coefficient
 repeat = 10;
 glm = struct;

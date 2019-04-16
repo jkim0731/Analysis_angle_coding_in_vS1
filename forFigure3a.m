@@ -1,44 +1,26 @@
-function devExp = glm_results_dev_exp_power(mouse, session, baseDir)
-
-%% For figure 4. Explanatory power of pole angle and whisker touch variables
-%% Also suits for other general purposes
-% Notes:
-%     Assume u is fixed. No change of u.cellNums (very important in indexing)
-%     After running 10 repeats of glm.
-%
-% Input: 
-%     mouse
-%     session
-%     baseDir
-% 
-% Files:
-%     10 repeated glm results, with both touch and 
-%     Uber file
-% 
-% Output:
-%     Deviance explained, from all coefficients, and from each group of coefficients.
-%     Other information: calcium, spikes, full model, predictors, cellID, average
-%     coefficients, correlation between full model and spikes.
-%
-%     devExp.allDE
-%     devExp.averageDE
-%     devExp.partial{}
-%     devExp.calcium{}
-%     devExp.spikes{}
-%     devExp.fullModel{}
-%     devExp.predictors{}
-%     devExp.cellID
-%     devExp.coeffs{} (including the intercept)
-%     devExp.corrVal
-
-% 2019/04/11 JK
+% for figure 3a
+% calcium
+% spikes
+% full model (without whisker touch variables
+% devExp (mean)
+% correlation
+% predictors
+%     touch
+%     whisking
+%         onset
+%         amplitude
+%         midpoint
+%     licking
+%     reward
+%     pole up sound
 
 %% basic settings
+mouse = 25;
+session = 4;
 repeat = 10;
-devExp = struct;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmWithWhiskerTouchVariables_JK%03dS%02d_R', mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
@@ -66,7 +48,6 @@ end
 %% calculating deviance explained
 % before going into parfor...
 allDE = zeros(numCells,1);
-partialDEsub = cell(numCells,1);
 calcium = cell(numCells,1);
 spikes = cell(numCells,1);
 fullModel = cell(numCells,1);
@@ -98,19 +79,8 @@ parfor ci = 1 : numCells
     fullLogLikelihood = sum(log(poisspdf(spkTest',model)));
     devExplained = (fullLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
 
-    tempPartialDEsub = zeros(1,length(indPartial));
-    for pi = 1 : length(indPartial)
-        partialInds = setdiff(1:length(coeff), indPartial{pi}+1); % including intercept
-        partialCoeffs = coeff(partialInds);
-        partialModel = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,partialInds(2:end)-1)]*partialCoeffs);
-        partialLogLikelihood = sum(log(poisspdf(spkTest',partialModel)));
-        partialDevExp = (partialLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
-        tempPartialDEsub(pi) = devExplained - partialDevExp;
-    end
-    
     % assigning values within parfor loop
     allDE(ci) = devExplained;
-    partialDEsub{ci} = tempPartialDEsub;
     calcium{ci} = dF;
     spikes{ci} = spkTest;
     fullModel{ci} = model;
@@ -118,14 +88,3 @@ parfor ci = 1 : numCells
     corrVal{ci} = corr(spkTest', model);
 end
 
-%% assigning parfor loop (and also some before) values to output 
-devExp.allDE = allDE;
-devExp.averageDE = averageDE;
-devExp.partialSub = partialDEsub;
-devExp.calcium = calcium;
-devExp.spikes = spikes;
-devExp.fullModel = fullModel;
-devExp.predictors = predictors;
-devExp.cellID = cIDAll;
-devExp.coeffs = averageCoeff;
-devExp.corrVal = corrVal;

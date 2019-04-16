@@ -22,7 +22,7 @@
 clear
 baseDir = 'C:\JK\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
+sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
 L4Mi = 13:16;
@@ -42,12 +42,12 @@ numResampling = 10000; % permutation test
 cd(baseDir)
 load('cellFunctionRidgeDE010.mat')
 
-for mi = 1 : length(mice)    
-% for mi = 7
+% for mi = 1 : length(mice)    
+for mi = 7
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-    for si = 1 : length(sessions{mi})
-%     for si = 2
+%     for si = 1 : length(sessions{mi})
+    for si = 2
 
         session = sessions{mi}(si);
         
