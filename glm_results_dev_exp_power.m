@@ -67,11 +67,7 @@ end
 % before going into parfor...
 allDE = zeros(numCells,1);
 partialDEsub = cell(numCells,1);
-calcium = cell(numCells,1);
-spikes = cell(numCells,1);
-fullModel = cell(numCells,1);
-predictors = cell(numCells,1);
-corrVal = cell(numCells,1); 
+corrVal = zeros(numCells,1); 
 parfor ci = 1 : numCells    
     cID = cIDAll(ci);
     tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
@@ -111,21 +107,13 @@ parfor ci = 1 : numCells
     % assigning values within parfor loop
     allDE(ci) = devExplained;
     partialDEsub{ci} = tempPartialDEsub;
-    calcium{ci} = dF;
-    spikes{ci} = spkTest;
-    fullModel{ci} = model;
-    predictors{ci} = testInput;
-    corrVal{ci} = corr(spkTest', model);
+    corrVal(ci) = corr(spkTest', model);
 end
 
 %% assigning parfor loop (and also some before) values to output 
 devExp.allDE = allDE;
 devExp.averageDE = averageDE;
 devExp.partialSub = partialDEsub;
-devExp.calcium = calcium;
-devExp.spikes = spikes;
-devExp.fullModel = fullModel;
-devExp.predictors = predictors;
 devExp.cellID = cIDAll;
 devExp.coeffs = averageCoeff;
 devExp.corrVal = corrVal;
