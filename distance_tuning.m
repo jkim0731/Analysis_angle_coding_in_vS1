@@ -259,6 +259,8 @@ for mi = 1 : length(mice)
                         for tunei = tunedDistanceInd+1:length(ditances)
                             if ismember(tunei, broadInd)
                                 broadNum = broadNum + 1;
+                            else
+                                break
                             end
                         end
                         if broadNum == length(broadInd)

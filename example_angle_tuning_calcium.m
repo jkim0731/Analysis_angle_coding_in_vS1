@@ -13,8 +13,8 @@
 %
 % % input:
 % u
-% cellID. a single number, or an array of numbers. cell indices.
-% (if no cell ID is given, starts with 1)
+% cellID. a single number, or an array of numbers. cell ID's.
+% (if no cell ID is given, starts with 1001)
 % No navigation option when only single number is given.
 % 
 % 
@@ -29,16 +29,16 @@ afterDur = 2; % in sec
 
 navigate = 1;
 if nargin > 3
-    cellIDList = ca.touchID(varargin);
+    cellIDList = varargin{1};
     if length(varargin{1}) == 1
         navigate = 0;
     end
-else    
+else
     cellIDList = ca.touchID;
 end
 
 ci = 1;
-while true
+while true 
 %     close all
     cellID = cellIDList(ci);
     caspkInd = find(ca.touchID == cellID);
@@ -72,51 +72,63 @@ while true
     sumHeatMapCa = cell2mat(sumHeatMapCa);
     sumHeatMapSpk = cell2mat(sumHeatMapSpk);
 
+    
+        colors = jet(length(angles));
+        
+        
+    
     % allValHeatMap = cell2mat(cellfun(@(x) cell2mat(x), egHeatMap, 'uniformoutput', false));
     climCa = [min(cellfun(@(x) min(min(cell2mat(x))), egHeatMapCa)), max(cellfun(@(x) max(max(cell2mat(x))), egHeatMapCa))];
     climSpk = [min(cellfun(@(x) min(min(cell2mat(x))), egHeatMapSpk)), max(cellfun(@(x) max(max(cell2mat(x))), egHeatMapSpk))];
     % clim = [prctile(allValHeatMap(:), 10), prctile(allValHeatMap(:), 90)];
     h1 = figure(1);
     h1.Units = 'normalized';
-    h1.OuterPosition = [0.1, 0.1, 0.2, 0.8];
+    h1.OuterPosition = [0.1, 0.1, 0.2, 0.6];
     for i = 1 : length(angles)
         subplot(length(angles),2,(i-1)*2+1)
         imagesc(cell2mat(egHeatMapCa{i}), climCa), colormap gray
         if i == length(angles)
             xticks([baselineFrames]);
-            xticklabels({'0'})
+            xticklabels({'^'})
         else
             xticks(0);
         end
+        yticks([])
+        ylabel([num2str(angles(i)), ' \circ'])
         if i == 1
             title('Calcium (Z-score)')
         end
+        set(gca, 'fontweight', 'bold')
         subplot(length(angles),2,i*2)
         imagesc(cell2mat(egHeatMapSpk{i}), climSpk), colormap gray
         if i == length(angles)
             xticks([baselineFrames]);
-            xticklabels({'0'})
+            xticklabels({'^'})
         else
             xticks(0);
         end
+        yticks([])
         if i == 1
             title('Spike (#)')
         end
+        set(gca, 'fontweight', 'bold')
     end
     % imagesc(allValHeatMap, clim), colormap gray
     %
     h2 = figure(2);
     h2.Units = 'normalized';
-    h2.OuterPosition = [0.3, 0.3, 0.6, 0.5];
+    h2.OuterPosition = [0.3, 0.1, 0.3, 0.6];
 
-    subplot(331)
+    subplot(321)
     imagesc(sumHeatMapCa)
     xticks([]);
-    yticks([]);
-    ylabel('Calcium during pole up')
-    colors = jet(length(angles));    
+    yticks([1:7]);
+    yticklabels({'45\circ', '60\circ', '75\circ', '90\circ', '105\circ', '120\circ', '135\circ'})
+    title('Calcium during pole in')
+    set(gca, 'fontweight', 'bold')
+%     colorbar
     
-    subplot(332)
+    subplot(323)
     hold off
     plot(-baselineFrames+1:afterFrames, sumHeatMapCa(1,:))
     hold on
@@ -126,50 +138,78 @@ while true
     for i = 1 : length(angles)
         plot(-baselineFrames+1:afterFrames, sumHeatMapCa(i,:), 'linewidth', 3, 'color', colors(i,:))
     end    
-    xticks([]);
+    xlim([-baselineFrames+1 afterFrames])
+%     xticks([round(-baselineFrames + u.frameRate/2), baselineFrames, round(baselineFrames + u.frameRate/2), round(baselineFrames + u.frameRate), round(baselineFrames + u.frameRate*3/2)])
+    xticks([-3, 0, 3, 6, 9, 12])
+    xticklabels({'-0.5', '0', '0.5', '1', '1.5', '2'})
+    xlabel('Time after pole onset (s)')
     ylabel('\DeltaF/F_0 Z-score')
+    set(gca, 'fontweight', 'bold')
     
-    subplot(333)
+    subplot(325)
     errorbar(angles, cellfun(@(x) mean(x), ca.val{caspkInd}), cellfun(@(x) std(x)/sqrt(length(x)), ca.val{caspkInd}), 'k-', 'linewidth', 3)
-    xticks([]);
+    ylabel('\DeltaF/F_0 Z-score')
+    xticks([45:15:135])
+    xlim([45 135])
+    xlabel('Pole angle (\circ)')
+    set(gca, 'fontweight', 'bold')
     
-    subplot(334)
+    subplot(322)
     imagesc(sumHeatMapSpk)
     colors = jet(length(angles));
     yticks([]);
-    ylabel('Spikes during pole up')
-    xticks([round(baselineFrames - u.frameRate/2), baselineFrames, round(baselineFrames + u.frameRate/2), round(baselineFrames + u.frameRate), round(baselineFrames + u.frameRate*3/2)])
-    xticklabels({'-0.5', '0', '0.5', '1', '1.5'})
-    xlabel('Time after pole onset (s)')
+    xticks([]);
+    title('Spikes during pole in')
+%     colorbar
     
-    subplot(335)
+    subplot(324)
+    
     hold off
-    plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(1,:))
+    % to remove previous plots, and for legend
+    p1 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(1,:), 'linewidth', 3, 'color', colors(1,:));
     hold on
+    p2 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(2,:), 'linewidth', 3, 'color', colors(2,:));
+    p3 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(3,:), 'linewidth', 3, 'color', colors(3,:));
+    p4 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(4,:), 'linewidth', 3, 'color', colors(4,:));
+    p5 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(5,:), 'linewidth', 3, 'color', colors(5,:));
+    p6 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(6,:), 'linewidth', 3, 'color', colors(6,:));
+    p7 = plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(7,:), 'linewidth', 3, 'color', colors(7,:));
+
+
+%     hold on
     for i = 1 : length(angles)        
         boundedline(-baselineFrames+1:afterFrames, sumHeatMapSpk(i,:), std(sumTimeSeriesSpk{i}) / sqrt(size(sumTimeSeriesSpk{i},1)), 'cmap', colors(i,:), 'transparency', 0.2)
     end
     for i = 1 : length(angles)
         plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(i,:), 'linewidth', 3, 'color', colors(i,:))
     end
+    legend([p1,p2,p3,p4,p5,p6,p7], {'45\circ','60\circ','75\circ','90\circ','105\circ','120\circ','135\circ'})
     ylabel('\Delta #Spk')
-    xticks([-3, 0, 3, 6, 9])
-    xticklabels({'-0.5', '0', '0.5', '1', '1.5'})
+    xlim([-baselineFrames+1 afterFrames])
+    xticks([-3, 0, 3, 6, 9, 12])
+    xticklabels({'-0.5', '0', '0.5', '1', '1.5', '2'})
     xlabel('Time after pole onset (s)')
     
-    subplot(336)
+    set(gca, 'fontweight', 'bold')
+    
+    subplot(326)
     errorbar(angles, cellfun(@(x) mean(x), spk.val{caspkInd}), cellfun(@(x) std(x)/sqrt(length(x)), spk.val{caspkInd}), 'k-', 'linewidth', 3)
-    xticks([]);
-    title('# of spikes only during touch frames')
-    
-    subplot(339)
-    tempcell = cellfun(@(x) mean(x(:,baselineFrames+1:end),2) - mean(x(:,1:baselineFrames),2), tempHMS, 'uniformoutput', false);
-    errorbar(angles, cellfun(@(x) mean(x), tempcell), cellfun(@(x) std(x)/sqrt(length(x)), tempcell), 'r-', 'linewidth', 3)
-    title('Time-averaged # of spikes')
     xticks([45:15:135])
-    xlabel('Pole Angle \o')
+    xlim([45 135])
+    xlabel('Pole angle (\circ)')
+    ylabel('\Delta #Spk')
+    set(gca, 'fontweight', 'bold')
+%     title('# of spikes only during touch frames')
     
-    while true
+%     subplot(428)
+%     tempcell = cellfun(@(x) mean(x(:,baselineFrames+1:end),2) - mean(x(:,1:baselineFrames),2), tempHMS, 'uniformoutput', false);
+%     errorbar(angles, cellfun(@(x) mean(x), tempcell), cellfun(@(x) std(x)/sqrt(length(x)), tempcell), 'r-', 'linewidth', 3)
+%     title('Time-averaged # of spikes')
+%     xticks([45:15:135])
+%     xlim([45 135])
+%     xlabel('Pole Angle \o')
+    
+    while true && navigate
         if waitforbuttonpress
             value = double(get(gcf,'CurrentCharacter'));
             switch value

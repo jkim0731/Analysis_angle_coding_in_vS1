@@ -16,26 +16,27 @@
 %     pole up sound
 
 %% basic settings
-baseDir = 'C:\Data\suite2p\';
+baseDir = 'D:\TPM\JK\suite2p\';
 mouse = 25;
 session = 4;
 repeat = 10;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
 glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+angletuningFn = sprintf('JK%03dS%02dangle_tuning', mouse, session);
 %% load files
 cd(baseDir)
 load('glm_results_responseType', 'naive')
 cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
 load([glmfnBase, '01'], 'allPredictors', 'posShift')
-
+load(angletuningFn)
 %%
 %% Chose plane 3 from JK025 S04
 %% Choose examples of sharp tuning
 %%
 %% settings
-plane = 3;
+plane = 8;
 
 % Image
 % figure, imshow(adapthisteq(mat2gray(u.mimg{plane})))
@@ -67,7 +68,7 @@ plot([sizes(2)-margins-scaleBarPix, sizes(2)-margins], [sizes(1) - margins, size
 expectedTextLength = 120;
 text(sizes(2)-expectedTextLength, margins, [num2str(-round(mean(mean(u.fovdepth{plane})))), ' \mum'], 'fontsize', 18, 'fontweight', 'bold', 'color', 'w')
 set(gcf, 'InvertHardCopy', 'off', 'color', 'w');
-print('fig3a_example_map','-depsc2')
+% print('fig3a_example_map','-depsc2')
 %%
 figure, histogram(naive(1).allDE)
 %%
@@ -175,4 +176,16 @@ set(gca, 'linewidth', 2', 'fontweight', 'bold', 'fontsize', 10)
 legend({'Nonlearner', 'Naive', 'Expert'}, 'box', 'off', 'location', 'southeast')
 
 
-print('fig3c_deviance_explained', '-depsc2')
+% print('fig3c_deviance_explained', '-depsc2')
+
+%% Correlation VS deviance explained
+figure, hold on
+for i = 1 : length(naive)
+    plot(naive(i).allDE, naive(i).corrVal, 'k.')
+end
+xlim([-0.1 0.6]), ylim([0 0.8])
+xlabel('Deviance Explained')
+ylabel('Correlation')
+set(gca, 'fontweight', 'bold', 'fontsize', 10, 'linewidth', 2)
+
+set
