@@ -31,9 +31,6 @@ baseDir = 'C:\JK\';
 % naiveInd = 1:length(mice);
 % expertInd = find(cellfun(@length, sessions)==2);
 
-load('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010.mat')
-expert(5) = glm_results_cell_function(39,23,baseDir)
-
 
 % for ni = 1 : length(naiveInd)
 %     mouse = mice(naiveInd(ni));
@@ -65,6 +62,10 @@ expert(5) = glm_results_cell_function(39,23,baseDir)
 
 save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010.mat', 'naive', 'expert', 'L4')
 toc
+
+
+
+
 
 %% Comparing between glm methods
 
@@ -455,6 +456,24 @@ legend('Naive', 'Expert')
     
     
     
-    
+%% Radial distance tasks
+
+clear
+tic
+baseDir = 'D:\JK\suite2p\';
+
+mice = [25,27,30,36,39,52];
+sessions = [22,17,22,18,24,26]; 
+
+for i = 1 : length(mice)
+    mouse = mice(i);
+    cd(sprintf('%s%03d',baseDir,mouse))
+    session = sessions(i);
+    distance(i) = glm_results_cell_function(mouse, session, baseDir);
+end
+
+save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010Distance.mat', 'distance')
+toc
+
     
     

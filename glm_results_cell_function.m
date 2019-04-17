@@ -41,16 +41,6 @@ function glm = glm_results_cell_function(mouse, session, baseDir)
 %     glm.tunedAngle : best tuned angle (45-135). Same length as tuned. Calculated by area under curve of each angle (same as summation of the coefficients)
 %     glm.tuneDirection : 1 - excited, 2 - inhibited
 %     glm.touchID : cell ID of touch response cells, EXCLUDING tuned cells
-%     ca.tunedID
-%     ca.tunedAngle
-%     ca.tuneDireaction
-%     ca.touchID
-%     spk.tunedID
-%     spk.tunedAngle
-%     spk.tuneDirection
-%     spk.touchID
-% 
-
 % 2019/04/02 JK
 
 
@@ -178,66 +168,4 @@ glm.soundID = glm.cellFitID(find(cellfun(@(x) x(2), glm.cellFunction)));
 glm.rewardID = glm.cellFitID(find(cellfun(@(x) x(3), glm.cellFunction)));
 glm.whiskingID = glm.cellFitID(find(cellfun(@(x) x(4), glm.cellFunction)));
 glm.lickingID = glm.cellFitID(find(cellfun(@(x) x(5), glm.cellFunction)));
-
-% %% finding tuning
-% % here, simply assume anything that has coefficient in indPartial{1}, other
-% % than all touch coefficients (mod(x,8) ~=0)
-% allFit = cell2mat(glm.cellFunction); % now it's cells of (1,5), 1 touch, 2 sound, 3 reward, 4 whisking, and 5 licking
-% touchFitInd = find(allFit(:,1));
-% tunedInd = zeros(size(allFit,1),1);
-% tunedAngle = zeros(size(allFit,1),1);
-% tuneDirection = zeros(size(allFit,1),1);
-% tuneCoeffInd = setdiff(indPartial{1}, find(mod(indPartial{1},length(angles)+1)==0));
-% angleCoeffInd = cell(length(angles),1);
-% for ai = 1 : length(angles)
-%     angleCoeffInd{ai} = find(mod(indPartial{1},length(angles)+1) == ai);
-% end
-% for ci = 1 : length(touchFitInd)
-%     ind = touchFitInd(ci);
-%     coeff = averageCoeff{ind};
-%     if ~isempty(find(coeff(tuneCoeffInd+1)))
-%         tempAllCoeff = cell2mat(allCoeff(fitInd(ind),:));
-%         tuneCoeffs = zeros(repeat,length(angles));
-%         for ri = 1 : repeat
-%             for ai = 1 : length(angles)
-%                 tuneCoeffs(ri, ai) = sum(tempAllCoeff(angleCoeffInd{ai}+1,ri));
-%             end
-%         end
-%         anovaGroups = meshgrid(1:length(angles),1:repeat);        
-% %         [anovaP, ~, anovaStat] = anova1(tuneCoeffs(:), anovaGroups(:), 'off');
-% %         pairComp = multcompare(anovaStat, 'Ctype', 'hsd', 'Display', 'off');
-%         anovaP = anova1(tuneCoeffs(:), anovaGroups(:), 'off');
-%         tempH = ttest(tuneCoeffs);
-%         tempH(isnan(tempH)) = 0;
-%         if anovaP < 0.01 && sum(tempH) > 0 % angle-tuned
-%             tunedInd(ind) = 1;
-%             tempHind = find(tempH);
-%             avgTuning = mean(tuneCoeffs);
-%             [~,maxIndind] = max(abs(avgTuning(tempHind)));            
-%             tunedAngle(ind) = angles(tempHind(maxIndind));
-%             if avgTuning(tempHind(maxIndind)) > 0
-%                 tuneDirection(ind) = 1;
-%             else
-%                 tuneDirection(ind) = 2;
-%             end
-%         end
-%     end
-% end
-% glm.tunedID = glm.cellFitID(find(tunedInd));
-% glm.tunedAngle = tunedAngle(find(tunedAngle));
-% glm.tuneDirection = tuneDirection(find(tuneDirection));
-% glm.touchID = glm.cellFitID(setdiff(touchFitInd, find(tunedInd)));
-% 
-% %% transfer information fron anova results
-% cadat = load(cafn);
-% ca.tunedID = cadat.cellsTuned;
-% ca.tunedAngle = cadat.tuneAngle;
-% ca.tuneDirection = cadat.tuneDirection;
-% ca.touch = cadat.cellsNTResponse;
-% 
-% spkdat = load(spkfn);
-% spk.tunedID = spkdat.cellsTuned;
-% spk.tunedAngle = spkdat.tuneAngle;
-% spk.tuneDirection = spkdat.tuneDirection;
-% spk.touch = spkdat.cellsNTResponse;
 

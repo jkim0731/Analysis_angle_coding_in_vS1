@@ -8,7 +8,7 @@
 % final decision of tuned cells
 % 
 % From tuned cells calculate:
-% 1) tuned angle (max abs)
+% 1) tuned distance (max abs)
 % 2) tuning direction (excited, inhibited, bipolar)
 % 3) unimodal-single, unimodal-broad, multimodal, leave-one-out, ramp
 % 4) modultaion: max-min.     sharpness: response of the max - mean response of the rest
@@ -47,7 +47,7 @@ for mi = 1 : length(mice)
     load(ufn)
 
     % still some settings
-    savefn = [u.mouseName,u.sessionName,'angle_tuning.mat']; %
+    savefn = [u.mouseName,u.sessionName,'distance_tuning.mat']; %
 
     % making templates
     % find touch trials 
@@ -85,7 +85,7 @@ for mi = 1 : length(mice)
         end
         distanceTrialInds{pi} = cell(length(distances),1); % index of planeTrialsInd{pi}
         for ai = 1 : length(distances)
-            distanceTrialInds{pi}{ai} = find(cellfun(@(x) x.angle == distances(ai), u.trials(planeTrialsInd{pi})));
+            distanceTrialInds{pi}{ai} = find(cellfun(@(x) x.distance == distances(ai), u.trials(planeTrialsInd{pi})));
         end
     end
 
@@ -101,7 +101,7 @@ for mi = 1 : length(mice)
 
     ca.touchID = touchID;
     catuned = zeros(length(touchID),1);
-    catunedAngle = zeros(length(touchID),1);
+    catunedDistance = zeros(length(touchID),1);
     catuneDirection = zeros(length(touchID),1);
     caunimodalSingle = zeros(length(touchID),1);
     caunimodalBroad = zeros(length(touchID),1);
@@ -117,7 +117,7 @@ for mi = 1 : length(mice)
 
     spk.touchID = touchID;
     spktuned = zeros(length(touchID),1);
-    spktunedAngle = zeros(length(touchID),1);
+    spktunedDistance = zeros(length(touchID),1);
     spktuneDirection = zeros(length(touchID),1);
     spkunimodalSingle = zeros(length(touchID),1);
     spkunimodalBroad = zeros(length(touchID),1);
@@ -176,9 +176,9 @@ for mi = 1 : length(mice)
             error('nan values')
         end
         groupAnova = zeros(size(caAnovaVal));
-        angleLengths = [1;cumsum(cellfun(@length, caVal))];
-        for ai = 1 : length(ditances)
-            groupAnova(angleLengths(ai):angleLengths(ai+1)) = deal(ai);
+        distanceLengths = [1;cumsum(cellfun(@length, caVal))];
+        for ai = 1 : length(distances)
+            groupAnova(distanceLengths(ai):distanceLengths(ai+1)) = deal(ai);
         end
 
         [caAnovaP, ~, caAnovaStat] = anova1(caAnovaVal, groupAnova, 'off');
@@ -216,7 +216,7 @@ for mi = 1 : length(mice)
                 catuned(ci) = 1;
                 [~, maxind] = max(abs(caMeans(sigInd)));
                 tunedDistanceInd = sigInd(maxind);
-                catunedDistance(ci) = ditances(tunedDistanceInd);
+                catunedDistance(ci) = distances(tunedDistanceInd);
 
                 maxVal = max(caMeans(sigInd));
                 minVal = min(caMeans(sigInd));
@@ -230,7 +230,7 @@ for mi = 1 : length(mice)
                     catuneDirection(ci) = -1; % error
                 end
                 camodulation(ci) = max(caMeans) - min(caMeans);
-                casharpness(ci) = caMeans(tunedDistanceInd) - mean(caMeans(setdiff(1:length(ditances), tunedDistanceInd)));
+                casharpness(ci) = caMeans(tunedDistanceInd) - mean(caMeans(setdiff(1:length(distances), tunedDistanceInd)));
 
                 % Categorization
                 ind__1 = find(caPairComp(:,1) == tunedDistanceInd);
@@ -239,7 +239,7 @@ for mi = 1 : length(mice)
                 insigDiffInd = find(caPairComp(testInd,6) >= thresholdCategory);
                 sigDiffInd = find(caPairComp(testInd,6) < thresholdCategory);
                 temp = caPairComp(testInd(insigDiffInd),1:2);
-                insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
+                insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedDistanceInd, except when there's nothing
 
                 if isempty(insigDiffIndGroup)
                     caunimodalSingle(ci) = 1;
@@ -256,7 +256,7 @@ for mi = 1 : length(mice)
                                 break
                             end
                         end
-                        for tunei = tunedDistanceInd+1:length(ditances)
+                        for tunei = tunedDistanceInd+1:length(distances)
                             if ismember(tunei, broadInd)
                                 broadNum = broadNum + 1;
                             else
@@ -266,7 +266,7 @@ for mi = 1 : length(mice)
                         if broadNum == length(broadInd)
                             caunimodalBroad(ci) = 1;
                             % if broad, then it can be a categorical
-                            center = (length(ditances)+1) / 2;
+                            center = (length(distances)+1) / 2;
                             compInd = union(find(caPairComp(:,1) == tunedDistanceInd), find(caPairComp(:,2) == tunedDistanceInd));
                             indMat = caPairComp(compInd,1:2);
                             if tunedDistanceInd < center
@@ -285,7 +285,7 @@ for mi = 1 : length(mice)
                         end
                     end
                     temp = caPairComp(testInd(sigDiffInd),1:2);
-                    sigIndGroup = setdiff(temp(:), tunedDistanceInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
+                    sigIndGroup = setdiff(temp(:), tunedDistanceInd); % exclude tunedDistanceInd. Any index that is significantly different from the tuned distance index.
                     if ~isempty(find(diff(insigDiffIndGroup)>1,1))
                         if sum(tempH(sigIndGroup))
                             camultimodal(ci) = 1; % multimodal. Including bipolar.
@@ -338,7 +338,7 @@ for mi = 1 : length(mice)
                 spktuned(ci) = 1;
                 [~, maxind] = max(abs(spkMeans(sigInd)));
                 tunedDistanceInd = sigInd(maxind);
-                spktunedAngle(ci) = ditances(tunedDistanceInd);
+                spktunedDistance(ci) = distances(tunedDistanceInd);
 
                 maxVal = max(spkMeans(sigInd));
                 minVal = min(spkMeans(sigInd));
@@ -352,7 +352,7 @@ for mi = 1 : length(mice)
                     spktuneDirection(ci) = -1; % error
                 end
                 spkmodulation(ci) = max(spkMeans) - min(spkMeans);
-                spksharpness(ci) = spkMeans(tunedDistanceInd) - mean(spkMeans(setdiff(1:length(ditances), tunedDistanceInd)));
+                spksharpness(ci) = spkMeans(tunedDistanceInd) - mean(spkMeans(setdiff(1:length(distances), tunedDistanceInd)));
 
                 % Categorization
                 ind__1 = find(spkPairComp(:,1) == tunedDistanceInd);
@@ -361,7 +361,7 @@ for mi = 1 : length(mice)
                 insigDiffInd = find(spkPairComp(testInd,6) >= thresholdCategory);
                 sigDiffInd = find(spkPairComp(testInd,6) < thresholdCategory);
                 temp = spkPairComp(testInd(insigDiffInd),1:2);
-                insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
+                insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedDistanceInd, except when there's nothing
 
                 if isempty(insigDiffIndGroup)
                     spkunimodalSingle(ci) = 1;
@@ -378,7 +378,7 @@ for mi = 1 : length(mice)
                                 break
                             end
                         end
-                        for tunei = tunedDistanceInd+1:length(ditances)
+                        for tunei = tunedDistanceInd+1:length(distances)
                             if ismember(tunei, broadInd)
                                 broadNum = broadNum + 1;
                             end
@@ -386,7 +386,7 @@ for mi = 1 : length(mice)
                         if broadNum == length(broadInd)
                             spkunimodalBroad(ci) = 1;
                             % if broad, then it can be a categorical
-                            center = (length(ditances)+1) / 2;
+                            center = (length(distances)+1) / 2;
                             compInd = union(find(spkPairComp(:,1) == tunedDistanceInd), find(spkPairComp(:,2) == tunedDistanceInd));
                             indMat = spkPairComp(compInd,1:2);
                             if tunedDistanceInd < center
@@ -405,7 +405,7 @@ for mi = 1 : length(mice)
                         end
                     end
                     temp = spkPairComp(testInd(sigDiffInd),1:2);
-                    sigIndGroup = setdiff(temp(:), tunedDistanceInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
+                    sigIndGroup = setdiff(temp(:), tunedDistanceInd); % exclude tunedDistanceInd. Any index that is significantly different from the tuned distance index.
                     if ~isempty(find(diff(insigDiffIndGroup)>1,1))
                         if sum(tempH(sigIndGroup))
                             spkmultimodal(ci) = 1; % multimodal. Including bipolar.
@@ -431,7 +431,7 @@ for mi = 1 : length(mice)
     end
 
     ca.tuned = catuned;
-    ca.tunedAngle = catunedAngle;
+    ca.tunedDistance = catunedDistance;
     ca.tuneDirection = catuneDirection;
     ca.unimodalSingle = caunimodalSingle;
     ca.unimodalBroad = caunimodalBroad;
@@ -445,7 +445,7 @@ for mi = 1 : length(mice)
     ca.val = caValAll;
 
     spk.tuned = spktuned;
-    spk.tunedAngle = spktunedAngle;
+    spk.tunedDistance = spktunedDistance;
     spk.tuneDirection = spktuneDirection;
     spk.unimodalSingle = spkunimodalSingle;
     spk.unimodalBroad = spkunimodalBroad;
