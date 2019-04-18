@@ -20,7 +20,7 @@
 
 % settings
 clear
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'C:\JK\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 naiveMi = 1:12;
@@ -43,7 +43,7 @@ cd(baseDir)
 load('cellFunctionRidgeDE010.mat')
 
 % for mi = 1 : length(mice)    
-for mi = 1:3
+for mi = 4:8
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
     for si = 1 : length(sessions{mi})

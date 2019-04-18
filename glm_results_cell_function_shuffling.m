@@ -77,7 +77,8 @@ L4depth = 350; % include 350 um as L4 (350 is the starting point)
 
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+% glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+glmfnBase = sprintf('glmWithWhiskerTouchVariables_JK%03dS%02d_R', mouse, session);
 % cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
 % spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 
@@ -85,27 +86,47 @@ glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
 cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
 u = u;
-%% select cells with average DE > deThreshold (0.1) and average coefficients
-averageDE = zeros(length(u.cellNums),1);
-allCoeff = cell(length(u.cellNums),repeat);
+
+
+% %% select cells with average DE > deThreshold (0.1) and average coefficients
+% averageDE = zeros(length(u.cellNums),1);
+% allCoeff = cell(length(u.cellNums),repeat);
+% for ri = 1 : repeat
+%     load(sprintf('%s%02d',glmfnBase, ri), 'fitCoeffs', 'fitDevExplained')
+%     averageDE = averageDE + fitDevExplained/repeat;
+%     allCoeff(:,ri) = fitCoeffs;
+% end
+% load(sprintf('%s%02d',glmfnBase, repeat), 'allPredictors', 'indPartial', 'posShift')
+% allPredictors = allPredictors;
+% indPartial = indPartial;
+% posShift = posShift;
+% averageCoeff = cell(length(u.cellNums),1);
+% for ci = 1 : length(u.cellNums)
+%     averageCoeff{ci} = mean(cell2mat(allCoeff(ci,:)),2);
+% end
+% deFitInd = find(averageDE >= deThreshold);
+
+load(sprintf('%s%02d',glmfnBase, repeat), 'cIDAll', 'allPredictors', 'indPartial', 'posShift')
+cIDAll = cIDAll;
+allPredictors = allPredictors;
+indPartial = indPartial;
+posShift = posShift;
+numCells = length(cIDAll);
+
+averageDE = zeros(numCells,1);
+allCoeff = cell(numCells,repeat);
 for ri = 1 : repeat
     load(sprintf('%s%02d',glmfnBase, ri), 'fitCoeffs', 'fitDevExplained')
     averageDE = averageDE + fitDevExplained/repeat;
     allCoeff(:,ri) = fitCoeffs;
 end
-load(sprintf('%s%02d',glmfnBase, repeat), 'allPredictors', 'indPartial', 'posShift')
-allPredictors = allPredictors;
-indPartial = indPartial;
-posShift = posShift;
-averageCoeff = cell(length(u.cellNums),1);
-for ci = 1 : length(u.cellNums)
+averageCoeff = cell(numCells,1);
+for ci = 1 : numCells
     averageCoeff{ci} = mean(cell2mat(allCoeff(ci,:)),2);
 end
-% deFitInd = find(averageDE >= deThreshold);
-
 %% assigning functions to each cell
 % cellFunction = cell(length(deFitInd), 1);
-numCells = length(u.cellNums);
+% numCells = length(u.cellNums);
 % cellFunction = cell(numCells,1);
 % deviance = cell(length(deFitInd),1);
 deviance = zeros(numCells,1);
@@ -403,7 +424,6 @@ parfor ci = 1 : numCells
                             tempWTVexclusionER(j) = (saturatedLogLikelihood - partialLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
                         end
                 end
-
             end
     %         if sum(tempFit(2:end)) == 0 % when there is no function fit, the cell is regarded not fit
     %             tempFit(1) = 0;

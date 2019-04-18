@@ -20,7 +20,7 @@
 
 % settings
 clear
-baseDir = 'C:\Data\suite2p\';
+baseDir = 'C:\JK\';
 mice = [25,27,30,36,39,52];
 sessions = [22,17,22,18,24,26];
 
@@ -407,7 +407,7 @@ for mi = 1 : length(mice)
                     temp = spkPairComp(testInd(sigDiffInd),1:2);
                     sigIndGroup = setdiff(temp(:), tunedDistanceInd); % exclude tunedDistanceInd. Any index that is significantly different from the tuned distance index.
                     if ~isempty(find(diff(insigDiffIndGroup)>1,1))
-                        if sum(tempH(sigIndGroup))
+                        if sum(tempH(insigDiffIndGroup))>1
                             spkmultimodal(ci) = 1; % multimodal. Including bipolar.
                         end
                         if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
