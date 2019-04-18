@@ -130,13 +130,13 @@ end
 % cellFunction = cell(numCells,1);
 % deviance = cell(length(deFitInd),1);
 deviance = zeros(numCells,1);
-errorRatio = cell(numCells,1);
+% errorRatio = cell(numCells,1);
 devExp = zeros(numCells,1);
 DEdiff = cell(numCells,1);
 exclusionER = cell(numCells,1);
-whiskerVariableER = cell(numCells,1);
-whiskerVariableExclusionER = zeros(numCells,6);
-whiskerVariableDEdiff = zeros(numCells,6);
+% whiskerVariableER = cell(numCells,1);
+whiskerVariableExclusionER = zeros(numCells,11);
+whiskerVariableDEdiff = zeros(numCells,11);
 
 parfor ci = 1 : numCells
     if ~isempty(averageCoeff{ci})
@@ -190,228 +190,228 @@ parfor ci = 1 : numCells
                 switch pi
                     case 1 % in case of touch angles, I put every angle + all touches and then circshift 8 angles together.
                     % # of delays are different too.
-                        aptest = testInput(:,indPartial{pi}(1));
-
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:8));                    
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
-                            for di = 1 : 3
-                                tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
+%                         aptest = testInput(:,indPartial{pi}(1));
+% 
+%                         nonanind = find(~isnan(aptest));
+%                         numGroups = length(find(diff(nonanind)>1));
+%                         indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
+% 
+%                         indGroups = cell(numGroups,1);
+% 
+%                         randGroups = cell(numGroups,numPermute);
+%                         for gi = 1 : numGroups
+%                             indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
+%                             for ri = 1 : numPermute
+%                                 randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
+%                             end
+%                         end
+%                         randGroups = cell2mat(randGroups);
+%                         indGroups = cell2mat(indGroups);
+%                         for ri = 1 : numPermute
+%                             tempPartialInputNodelay = testInput(:,indPartial{pi}(1:8));                    
+%                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
+%                             for di = 1 : 3
+%                                 tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
+%                                     circshift(tempPartialInputNodelay, [0 di-1]);
+%                             end
+%                             tempInput = testInput;
+%                             tempInput(:,indPartial{pi}) = tempPartialInputAll;
+%                             permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                         end
                     case 2 % in other cases, it repeats in every segment
                         % sound. shifts 3
-                        aptest = testInput(:,indPartial{pi}(1));
-
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1));                    
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*4);
-                            for di = 1 : 4
-                                tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
+%                         aptest = testInput(:,indPartial{pi}(1));
+% 
+%                         nonanind = find(~isnan(aptest));
+%                         numGroups = length(find(diff(nonanind)>1));
+%                         indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
+% 
+%                         indGroups = cell(numGroups,1);
+% 
+%                         randGroups = cell(numGroups,numPermute);
+%                         for gi = 1 : numGroups
+%                             indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
+%                             for ri = 1 : numPermute
+%                                 randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
+%                             end
+%                         end
+%                         randGroups = cell2mat(randGroups);
+%                         indGroups = cell2mat(indGroups);
+% 
+%                         for ri = 1 : numPermute
+%                             tempPartialInputNodelay = testInput(:,indPartial{pi}(1));                    
+%                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*4);
+%                             for di = 1 : 4
+%                                 tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
+%                                     circshift(tempPartialInputNodelay, [0 di-1]);
+%                             end
+%                             tempInput = testInput;
+%                             tempInput(:,indPartial{pi}) = tempPartialInputAll;
+%                             permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                         end
                     case 3
                         % reward. shifts 3. grouped in angles, so same as in touch
-                        aptest = testInput(:,indPartial{pi}(1));
-
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:8));                    
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*4);
-                            for di = 1 : 4
-                                tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
+%                         aptest = testInput(:,indPartial{pi}(1));
+% 
+%                         nonanind = find(~isnan(aptest));
+%                         numGroups = length(find(diff(nonanind)>1));
+%                         indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
+% 
+%                         indGroups = cell(numGroups,1);
+% 
+%                         randGroups = cell(numGroups,numPermute);
+%                         for gi = 1 : numGroups
+%                             indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
+%                             for ri = 1 : numPermute
+%                                 randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
+%                             end
+%                         end
+%                         randGroups = cell2mat(randGroups);
+%                         indGroups = cell2mat(indGroups);
+% 
+%                         for ri = 1 : numPermute
+%                             tempPartialInputNodelay = testInput(:,indPartial{pi}(1:8));                    
+%                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*4);
+%                             for di = 1 : 4
+%                                 tempPartialInputAll(:,(di-1)*size(tempPartialInputNodelay,2)+1 : di*size(tempPartialInputNodelay,2)) = ...
+%                                     circshift(tempPartialInputNodelay, [0 di-1]);
+%                             end
+%                             tempInput = testInput;
+%                             tempInput(:,indPartial{pi}) = tempPartialInputAll;
+%                             permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                         end
                     case 4
                         % whisking. shifts 7. 3 groups in sequential shift
-                        aptest = testInput(:,indPartial{pi}(1));
+%                         aptest = testInput(:,indPartial{pi}(1));
+% 
+%                         nonanind = find(~isnan(aptest));
+%                         numGroups = length(find(diff(nonanind)>1));
+%                         indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
+% 
+%                         indGroups = cell(numGroups,1);
+% 
+%                         randGroups = cell(numGroups,numPermute);
+%                         for gi = 1 : numGroups
+%                             indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
+%                             for ri = 1 : numPermute
+%                                 randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
+%                             end
+%                         end
+%                         randGroups = cell2mat(randGroups);
+%                         indGroups = cell2mat(indGroups);
 
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:7:21));
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*7);
-                            for di = 1 : 7
-                                tempPartialInputAll(:, di : 7 : di+14 ) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
+%                         for ri = 1 : numPermute
+%                             tempPartialInputNodelay = testInput(:,indPartial{pi}(1:7:21));
+%                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*7);
+%                             for di = 1 : 7
+%                                 tempPartialInputAll(:, di : 7 : di+14 ) = ...
+%                                     circshift(tempPartialInputNodelay, [0 di-1]);
+%                             end
+%                             tempInput = testInput;
+%                             tempInput(:,indPartial{pi}) = tempPartialInputAll;
+%                             permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                         end
                     case 5
                         % licking. shifts 4. 2 groups in sequential shift
-                        aptest = testInput(:,indPartial{pi}(1));
+%                         aptest = testInput(:,indPartial{pi}(1));
+% 
+%                         nonanind = find(~isnan(aptest));
+%                         numGroups = length(find(diff(nonanind)>1));
+%                         indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
+% 
+%                         indGroups = cell(numGroups,1);
+% 
+%                         randGroups = cell(numGroups,numPermute);
+%                         for gi = 1 : numGroups
+%                             indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
+%                             for ri = 1 : numPermute
+%                                 randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
+%                             end
+%                         end
+%                         randGroups = cell2mat(randGroups);
+%                         indGroups = cell2mat(indGroups);
 
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:4:5));
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*4);
-                            for di = 1 : 4
-                                tempPartialInputAll(:, di : 4 : di+4 ) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
+%                         for ri = 1 : numPermute
+%                             tempPartialInputNodelay = testInput(:,indPartial{pi}(1:4:5));
+%                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*4);
+%                             for di = 1 : 4
+%                                 tempPartialInputAll(:, di : 4 : di+4 ) = ...
+%                                     circshift(tempPartialInputNodelay, [0 di-1]);
+%                             end
+%                             tempInput = testInput;
+%                             tempInput(:,indPartial{pi}) = tempPartialInputAll;
+%                             permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                         end
                     case 6
                         % whisker touch variables. shifts 3. 11 groups in sequential shift
-                        aptest = testInput(:,indPartial{pi}(1));
+%                         aptest = testInput(:,indPartial{pi}(1));
+% 
+%                         nonanind = find(~isnan(aptest));
+%                         numGroups = length(find(diff(nonanind)>1));
+%                         indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
+% 
+%                         indGroups = cell(numGroups,1);
+% 
+%                         randGroups = cell(numGroups,numPermute);
+%                         for gi = 1 : numGroups
+%                             indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
+%                             for ri = 1 : numPermute
+%                                 randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
+%                             end
+%                         end
+%                         randGroups = cell2mat(randGroups);
+%                         indGroups = cell2mat(indGroups);
 
-                        nonanind = find(~isnan(aptest));
-                        numGroups = length(find(diff(nonanind)>1));
-                        indIntervals = [0;find(diff(nonanind)>1)]; % (i)+1:(i+1)
-
-                        indGroups = cell(numGroups,1);
-
-                        randGroups = cell(numGroups,numPermute);
-                        for gi = 1 : numGroups
-                            indGroups{gi} = nonanind(indIntervals(gi)+1:indIntervals(gi+1));    
-                            for ri = 1 : numPermute
-                                randGroups{gi,ri} = indGroups{gi}(randperm(length(indGroups{gi})));
-                            end
-                        end
-                        randGroups = cell2mat(randGroups);
-                        indGroups = cell2mat(indGroups);
-
-                        for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:3:31));
-                            tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                            tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
-                            for di = 1 : 3
-                                tempPartialInputAll(:, di : 3 : di+30 ) = ...
-                                    circshift(tempPartialInputNodelay, [0 di-1]);
-                            end
-                            tempInput = testInput;
-                            tempInput(:,indPartial{pi}) = tempPartialInputAll;
-                            permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                            permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                            permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                        end
+%                         for ri = 1 : numPermute
+%                             tempPartialInputNodelay = testInput(:,indPartial{pi}(1:3:31));
+%                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
+%                             for di = 1 : 3
+%                                 tempPartialInputAll(:, di : 3 : di+30 ) = ...
+%                                     circshift(tempPartialInputNodelay, [0 di-1]);
+%                             end
+%                             tempInput = testInput;
+%                             tempInput(:,indPartial{pi}) = tempPartialInputAll;
+%                             permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                             permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                             permER(pi,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                         end
 
 
                         % comparing between whisker touch variables. There are
                         % 11 of them currently 2019/04/16 JK
 
-                        for ri = 1 : numPermute
-                            for j = 1 : 11
-                                tempPartialInputNodelay = testInput(:,indPartial{pi}((j-1)*3+1));
-                                tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
-                                tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), 3);
-                                for di = 1 : 3
-                                    tempPartialInputAll(:, di ) = ...
-                                        circshift(tempPartialInputNodelay, [0 di-1]);
-                                end
-                                tempInput = testInput;
-                                tempInput(:,indPartial{pi}((j-1)*3+1:j*3)) = tempPartialInputAll;
-                                permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
-                                permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
-                                permWTV(j,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
-                            end
-                        end
+%                         for ri = 1 : numPermute
+%                             for j = 1 : 11
+%                                 tempPartialInputNodelay = testInput(:,indPartial{pi}((j-1)*3+1));
+%                                 tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
+%                                 tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), 3);
+%                                 for di = 1 : 3
+%                                     tempPartialInputAll(:, di ) = ...
+%                                         circshift(tempPartialInputNodelay, [0 di-1]);
+%                                 end
+%                                 tempInput = testInput;
+%                                 tempInput(:,indPartial{pi}((j-1)*3+1:j*3)) = tempPartialInputAll;
+%                                 permModel = exp([ones(length(finiteIndTest),1),tempInput(finiteIndTest,:)]*coeff);
+%                                 permLogLikelihood = sum(log(poisspdf(spkTest',permModel)));
+%                                 permWTV(j,ri) = (saturatedLogLikelihood - permLogLikelihood)/(saturatedLogLikelihood - fullLogLikelihood);
+%                             end
+%                         end
 
 
                         for j = 1 : 11
@@ -433,21 +433,21 @@ parfor ci = 1 : numCells
         whiskerVariableDEdiff(ci,:) = tempWVDEdiff;
         whiskerVariableExclusionER(ci,:) = tempWTVexclusionER;
         deviance(ci) = tempDeviance;
-        errorRatio{ci} = permER;
+%         errorRatio{ci} = permER;
         devExp(ci) = devExplained;
         DEdiff{ci} = tempPartialDEsub;
         exclusionER{ci} = tempExclusionER;
-        whiskerVariableER{ci} = permWTV;
+%         whiskerVariableER{ci} = permWTV;
     end
 end
 
 glm.cID = u.cellNums;
 glm.deviance = deviance;
-glm.errorRatio = errorRatio;
+% glm.errorRatio = errorRatio;
 glm.devExp = devExp;
 glm.DEdiff = DEdiff;
 glm.exclusionER = exclusionER;
-glm.whiskerVariableER = whiskerVariableER;
+% glm.whiskerVariableER = whiskerVariableER;
 glm.whiskerVariableExclusionER = whiskerVariableExclusionER;
 glm.whiskerVariableDEdiff = whiskerVariableDEdiff;
 
