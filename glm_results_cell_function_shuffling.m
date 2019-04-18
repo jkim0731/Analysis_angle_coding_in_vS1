@@ -141,7 +141,7 @@ whiskerVariableDEdiff = zeros(numCells,11);
 parfor ci = 1 : numCells
     if ~isempty(averageCoeff{ci})
         fprintf('Processing %d/%d\n', ci, numCells)
-        cID = u.cellNums(ci);
+        cID = cIDAll(ci);
         tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
         cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);
         planeInd = floor(cID/1000);
