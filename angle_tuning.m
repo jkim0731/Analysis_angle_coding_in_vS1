@@ -42,8 +42,8 @@ numResampling = 10000; % permutation test
 cd(baseDir)
 load('cellFunctionRidgeDE010.mat')
 
-for mi = 1 : length(mice)    
-% for mi = 7
+% for mi = 1 : length(mice)    
+for mi = 1:3
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
     for si = 1 : length(sessions{mi})
@@ -427,7 +427,7 @@ for mi = 1 : length(mice)
                         temp = spkPairComp(testInd(sigDiffInd),1:2);
                         sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
                         if ~isempty(find(diff(insigDiffIndGroup)>1,1))
-                            if sum(tempH(insigDiffIndGroup))
+                            if sum(tempH(insigDiffIndGroup))>1 % to exclude tuned angle
                                 spkmultimodal(ci) = 1; % multimodal. Including bipolar.
                             end
                             if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
