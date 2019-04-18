@@ -427,7 +427,7 @@ for mi = 1 : length(mice)
                         temp = spkPairComp(testInd(sigDiffInd),1:2);
                         sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
                         if ~isempty(find(diff(insigDiffIndGroup)>1,1))
-                            if sum(tempH(sigIndGroup))
+                            if sum(tempH(insigDiffIndGroup))
                                 spkmultimodal(ci) = 1; % multimodal. Including bipolar.
                             end
                             if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
