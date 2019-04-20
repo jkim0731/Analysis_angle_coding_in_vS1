@@ -38,6 +38,7 @@ repeat = 10;
 devExp = struct;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
+% glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
 glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))

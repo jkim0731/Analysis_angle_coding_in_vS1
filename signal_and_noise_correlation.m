@@ -42,7 +42,7 @@ for i = 1
             model = exp([ones(size(input,1),1),input]*coeff);
             
             tempSignal{ci} = model;
-            tempNoise{ci} = spike' - model;
+            tempNoise{ci} = min_max_normalization(spike') - min_max_normalization(model);
         end
         temp = tune.naive(i);
         if cgi == 1
@@ -105,7 +105,7 @@ for i = 1
             model = exp([ones(size(input,1),1),input]*coeff);
             
             tempSignal{ci} = model;
-            tempNoise{ci} = spike' - model;
+            tempNoise{ci} = min_max_normalization(spike') - min_max_normalization(model);
         end
         temp = tune.expert(i);
         if cgi == 1
