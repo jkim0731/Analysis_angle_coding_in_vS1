@@ -116,6 +116,7 @@ errorRatio = cell(numCells,1);
 devExp = zeros(numCells,1);
 DEdiff = cell(numCells,1);
 exclusionER = cell(numCells,1);
+
 whiskerVariableER = cell(numCells,1);
 whiskerVariableExclusionER = zeros(numCells,13);
 whiskerVariableDEdiff = zeros(numCells,13);
@@ -154,10 +155,17 @@ parfor ci = 1 : numCells
             numPermute = 100;
             tempPartialDEsub = zeros(1,length(indPartial));
             tempExclusionER = zeros(1,length(indPartial));
+
             permER = zeros(length(indPartial),numPermute);
             permWTV = zeros(13,numPermute);
             tempWVDEdiff = zeros(1,13);
             tempWTVexclusionER = zeros(1,13);
+
+            permER = zeros(length(indPartial),numPermute);
+            permWTV = zeros(6,numPermute);
+            tempWVDEdiff = zeros(1,11);
+            tempWTVexclusionER = zeros(1,11);
+
             for pi = 1 : length(indPartial)
                 %% exclusion method
                 partialInds = setdiff(1:length(coeff), indPartial{pi}+1); % including intercept
@@ -207,6 +215,8 @@ parfor ci = 1 : numCells
                         % comparing between whisker touch variables. There are
                         % 6 of them currently
                         % 11 of them 2019/04/16 JK
+                        % 13 of them 2019/04/18 JK
+
                         for ri = 1 : numPermute
                             for j = 1 : 13
                                 tempPartialInputNodelay = testInput(:,indPartial{pi}((j-1)*3+1));

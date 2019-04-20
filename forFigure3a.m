@@ -110,7 +110,7 @@ xlim([4475 5177]), ylim([0.01 10])
 
 axis off
 set(gcf, 'InvertHardCopy', 'off', 'color', 'w');
-print('fig3b_example_traces', '-depsc2')
+% print('fig3b_example_traces', '-depsc2')
 %%
 naive(1).allDE(ci)
 naive(1).corrVal(ci)
@@ -188,4 +188,42 @@ xlabel('Deviance Explained')
 ylabel('Correlation')
 set(gca, 'fontweight', 'bold', 'fontsize', 10, 'linewidth', 2)
 
-set
+
+
+%%
+cID = 3012;
+ci = find(u.cellNums == cID);
+traces = get_traces_per_cell(u, cID, allPredictors, L4(1).coeffs{ci}, posShift);
+figure('units', 'normalized', 'outerposition', [0.3 0.3 0.4 0.4]), hold on
+plot(min_max_normalization(traces.calcium)*4 + 7 , 'color', [0.1 0.8 0.1], 'linewidth', 2)
+plot(min_max_normalization(traces.spikes)*2.5 + 5.2, 'color', [0.8 0.1 0.1], 'linewidth', 2)
+
+plot(min_max_normalization(traces.model)*2.5 + 5.2, 'k-', 'linewidth', 2)
+plot(min_max_normalization(traces.predictors(:,8)) + 3.5, 'color', [0.7 0.7 0.7], 'linewidth', 2)
+plot(min_max_normalization(traces.predictors(:,63)) + 2.5, 'color', [0.7 0.7 0.7], 'linewidth', 2)
+plot(min_max_normalization(traces.predictors(:,70)) + 1.8, 'color', [0.7 0.7 0.7], 'linewidth', 2)
+plot(min_max_normalization(traces.predictors(:,77)) + 1.1, 'color', [0.7 0.7 0.7], 'linewidth', 2)
+lickL = min_max_normalization(traces.predictors(:,83));
+% lickL(lickL==0) = nan;
+lickR = min_max_normalization(traces.predictors(:,87));
+% lickR(lickR==0) = nan;
+plot(lickL, 'color', [0.9 0.4 0.4], 'linewidth', 2)
+plot(lickR, 'color', [0.4 0.4 0.9], 'linewidth', 2)
+reward = min_max_normalization(traces.predictors(:,36));
+reward(reward<max(reward)) = 0;
+reward(isnan(reward)) = 0;
+rewarded = find(reward);
+rdiffOne = find(diff(find(reward))==1);
+reward(rewarded(rdiffOne+1)) = nan;
+reward(reward==0) = nan;
+sound = min_max_normalization(traces.predictors(:,25));
+sound(sound<max(sound)) = nan;
+plot(reward+2.3, '^', 'markersize', 4, 'markeredgecolor', 'none', 'markerfacecolor', 'c')
+plot(sound+2.3, '^', 'markersize', 4, 'markeredgecolor', 'none', 'markerfacecolor', 'm')
+onedF = 4 / max(traces.calcium);
+plot([5100 5100], [9 9+onedF], 'color', [0.1 0.8 0.1], 'linewidth', 2)
+plot([5120 5120 + u.frameRate*5], [9 9], 'k-', 'linewidth', 2)
+xlim([4475 5177]), ylim([0.01 10])
+
+axis off
+set(gcf, 'InvertHardCopy', 'off', 'color', 'w');
