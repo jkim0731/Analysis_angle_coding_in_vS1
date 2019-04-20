@@ -117,8 +117,8 @@ devExp = zeros(numCells,1);
 DEdiff = cell(numCells,1);
 exclusionER = cell(numCells,1);
 whiskerVariableER = cell(numCells,1);
-whiskerVariableExclusionER = zeros(numCells,6);
-whiskerVariableDEdiff = zeros(numCells,6);
+whiskerVariableExclusionER = zeros(numCells,13);
+whiskerVariableDEdiff = zeros(numCells,13);
 
 parfor ci = 1 : numCells
     if ~isempty(averageCoeff{ci})
@@ -155,9 +155,9 @@ parfor ci = 1 : numCells
             tempPartialDEsub = zeros(1,length(indPartial));
             tempExclusionER = zeros(1,length(indPartial));
             permER = zeros(length(indPartial),numPermute);
-            permWTV = zeros(6,numPermute);
-            tempWVDEdiff = zeros(1,6);
-            tempWTVexclusionER = zeros(1,6);
+            permWTV = zeros(13,numPermute);
+            tempWVDEdiff = zeros(1,13);
+            tempWTVexclusionER = zeros(1,13);
             for pi = 1 : length(indPartial)
                 %% exclusion method
                 partialInds = setdiff(1:length(coeff), indPartial{pi}+1); % including intercept
@@ -170,7 +170,7 @@ parfor ci = 1 : numCells
 
                 %% permutation method
                 switch pi
-                    case 1 % whisker touch variables. shifts 3. 11 groups in sequential shift                    
+                    case 1 % whisker touch variables. shifts 3. 13 groups in sequential shift                    
                         aptest = testInput(:,indPartial{pi}(1));
 
                         nonanind = find(~isnan(aptest));
@@ -190,11 +190,11 @@ parfor ci = 1 : numCells
                         indGroups = cell2mat(indGroups);
 
                         for ri = 1 : numPermute
-                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:3:31));
+                            tempPartialInputNodelay = testInput(:,indPartial{pi}(1:3:37));
                             tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
                             tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), size(tempPartialInputNodelay,2)*3);
                             for di = 1 : 3
-                                tempPartialInputAll(:, di : 3 : di+30 ) = ...
+                                tempPartialInputAll(:, di : 3 : di+36 ) = ...
                                     circshift(tempPartialInputNodelay, [0 di-1]);
                             end
                             tempInput = testInput;
@@ -208,7 +208,7 @@ parfor ci = 1 : numCells
                         % 6 of them currently
                         % 11 of them 2019/04/16 JK
                         for ri = 1 : numPermute
-                            for j = 1 : 11
+                            for j = 1 : 13
                                 tempPartialInputNodelay = testInput(:,indPartial{pi}((j-1)*3+1));
                                 tempPartialInputNodelay(indGroups,:) = tempPartialInputNodelay(randGroups(:,ri),:);
                                 tempPartialInputAll = zeros(size(tempPartialInputNodelay,1), 3);
@@ -224,7 +224,7 @@ parfor ci = 1 : numCells
                             end
                         end
                         
-                        for j = 1 : 11
+                        for j = 1 : 13
                             partialInds = setdiff(1:length(coeff), indPartial{pi}((j-1)*3+1:j*3) + 1); % including intercept
                             partialCoeffs = coeff(partialInds);
                             partialModel = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,partialInds(2:end)-1)]*partialCoeffs);
