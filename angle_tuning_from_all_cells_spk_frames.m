@@ -27,7 +27,7 @@
 
 % settings
 clear
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'D:\\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveMi = 1:12;
@@ -63,7 +63,7 @@ for mi = 1 : length(mice)
         load(ufn)
         
         % still some settings
-        savefn = [u.mouseName,u.sessionName,'angle_tuning_all_cell.mat']; %
+        savefn = [u.mouseName,u.sessionName,'angle_tuning_all_cell_all_spikes.mat']; %
 
         % making templates
         % find touch trials 
@@ -90,7 +90,7 @@ for mi = 1 : length(mice)
                 tempTrial = u.trials{planeTrialsInd{pi}(ti)};
                 tempFrames = cell(1, length(tempTrial.protractionTouchChunks));
                 for ptci = 1 : length(tempFrames)
-                    tempFrames{ptci} = find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
+                    tempFrames{ptci} = [0:1]+find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
                 end
                 tempTouchFrames = cell2mat(tempFrames);
                 touchFrames{pi}{ti} = tempTouchFrames(tempTouchFrames <= length(tempTrial.tpmTime{tempInd}));                
@@ -142,7 +142,7 @@ for mi = 1 : length(mice)
                     tempInd = trialAngleInd(ti);
                     tempAllSpikes{ti} = tempSpk{tempInd}(spkTouchFrames{tempInd})' - mean(tempSpk{tempInd}(baselineFrames{tempInd}));
                 end
-                spkValAll{ci}{ai} = cell2mat(tempAllSpikes);
+                spkValAll{ci}{ai} = cell2mat(tempAllSpikes)*2;
             end
 
             spkVal = spkValAll{ci};
@@ -283,20 +283,6 @@ for mi = 1 : length(mice)
             end            
         end
         
-        ca.tuned = catuned;
-        ca.tunedAngle = catunedAngle;
-        ca.tuneDirection = catuneDirection;
-        ca.unimodalSingle = caunimodalSingle;
-        ca.unimodalBroad = caunimodalBroad;
-        ca.multimodal = camultimodal;
-        ca.leaveOneOut = caleaveOneOut;
-        ca.categorical = cacategorical;
-        ca.ramp = caramp;
-        ca.modulation = camodulation;
-        ca.sharpness = casharpness;
-        ca.NTamplitude = caNTamplitude;
-        ca.NTdirection = caNTdirection;
-        ca.val = caValAll;
         
         spk.tuned = spktuned;
         spk.tunedAngle = spktunedAngle;
@@ -323,7 +309,7 @@ for mi = 1 : length(mice)
         info.fovyrange = u.fovyrange;
         info.fovdepth = u.fovdepth;
 
-        save(savefn, 'ca','spk','info')
+        save(savefn, 'spk','info')
 
     end
 end
