@@ -8,7 +8,8 @@
 
 %% first, look at difference in DE diff in each one
 clear
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'C:\JK\';
+cd(baseDir)
 fullModel = load('glm_cell_function_error_ratio_withWTV_shuffling', 'naive', 'expert');
 wtvModel = load('glm_cell_function_error_ratio_WTV_ONLY', 'naive', 'expert');
 touchModel = load('glm_results_responseType', 'naive', 'expert');
@@ -16,7 +17,7 @@ touchModel = load('glm_results_responseType', 'naive', 'expert');
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3]}; 
 
-%%
+%% Are the two methods correlated?
 
 figure, 
 subplot(121), hold on
@@ -257,7 +258,7 @@ for i = 1 : 6
     wtvNegvalInd{i} = find(DEdiffFromPartial(:,2) < 0);
 end
 
-figure,
+
 subplot(223), hold on
 for i = 1 : 6
     fullDEdiff = cell2mat(fullModel.expert(i).DEdiff);
@@ -293,7 +294,97 @@ xlabel('DE diff touch')
 ylabel('DE diff WTV')
 title('Expert WTV only better than full model')
 
-%% 
+%% Results: scattered a lot. Ther eis a tendency, but very weak.
+
+%% How does DE diff < 0.1 from partial prediction look like in partial fitting?
+% naive
+touchLowvalInd = cell(12,1);
+wtvLowvalInd = cell(12,1);
+for i = 1 : 12
+    fullDEdiff = cell2mat(fullModel.naive(i).DEdiff);
+    DEdiffFromFull = fullDEdiff(:,[1,6]);
+    touchLowvalInd{i} = find(DEdiffFromFull(:,1) < 0.1);
+    wtvLowvalInd{i} = find(DEdiffFromFull(:,2) < 0.1);
+end
+
+figure,
+subplot(221), hold on
+for i = 1 : 12
+    cID = wtvModel.naive(i).cID; % touch cells
+    % DEdiffFromFull = zeros(length(cID),2); % 1 for touch, 2 for wtv
+    DEdiffFromPartial = zeros(length(cID),2); 
+    cinds = find(ismember(touchModel.naive(i).cellID, cID));
+    
+    DEdiffFromPartial(:,1) = fullModel.naive(i).devExp - wtvModel.naive(i).devExp; % how much does touch predictors affect the prediction?
+    DEdiffFromPartial(:,2) = fullModel.naive(i).devExp - touchModel.naive(i).allDE(cinds); % how much does wtv predictors affect the prediction?
+    plot(DEdiffFromPartial(:,1), DEdiffFromPartial(:,2), 'k.')
+end
+for i = 1 : 12
+    cID = wtvModel.naive(i).cID; % touch cells
+    % DEdiffFromFull = zeros(length(cID),2); % 1 for touch, 2 for wtv
+    DEdiffFromPartial = zeros(length(cID),2); 
+    cinds = find(ismember(touchModel.naive(i).cellID, cID));
+    
+    DEdiffFromPartial(:,1) = fullModel.naive(i).devExp - wtvModel.naive(i).devExp; % how much does touch predictors affect the prediction?
+    DEdiffFromPartial(:,2) = fullModel.naive(i).devExp - touchModel.naive(i).allDE(cinds); % how much does wtv predictors affect the prediction?
+    plot(DEdiffFromPartial(touchLowvalInd{i},1), DEdiffFromPartial(touchLowvalInd{i},2), 'r.')
+end
+
+xlabel('DE diff touch from partial fitting')
+ylabel('DE diff WTV from partial fitting')
+title('Naive without touch similar to full model')
+
+subplot(222), hold on
+for i = 1 : 12
+    cID = wtvModel.naive(i).cID; % touch cells
+    % DEdiffFromFull = zeros(length(cID),2); % 1 for touch, 2 for wtv
+    DEdiffFromPartial = zeros(length(cID),2); 
+    cinds = find(ismember(touchModel.naive(i).cellID, cID));
+    
+    DEdiffFromPartial(:,1) = fullModel.naive(i).devExp - wtvModel.naive(i).devExp; % how much does touch predictors affect the prediction?
+    DEdiffFromPartial(:,2) = fullModel.naive(i).devExp - touchModel.naive(i).allDE(cinds); % how much does wtv predictors affect the prediction?
+    plot(DEdiffFromPartial(:,1), DEdiffFromPartial(:,2), 'k.')
+end
+for i = 1 : 12
+    cID = wtvModel.naive(i).cID; % touch cells
+    % DEdiffFromFull = zeros(length(cID),2); % 1 for touch, 2 for wtv
+    DEdiffFromPartial = zeros(length(cID),2); 
+    cinds = find(ismember(touchModel.naive(i).cellID, cID));
+    
+    DEdiffFromPartial(:,1) = fullModel.naive(i).devExp - wtvModel.naive(i).devExp; % how much does touch predictors affect the prediction?
+    DEdiffFromPartial(:,2) = fullModel.naive(i).devExp - touchModel.naive(i).allDE(cinds); % how much does wtv predictors affect the prediction?
+    plot(DEdiffFromPartial(wtvLowvalInd{i},1), DEdiffFromPartial(wtvLowvalInd{i},2), 'b.')
+end
+
+xlabel('DE diff touch from partial fitting')
+ylabel('DE diff WTV from partial fitting')
+title('Naive without WTV similar to full model')
+
+%% Results: again, there is a tendency, but very weak and scattered or covers most of the points.
+%% Negative values from partial fitting are not necessarily low values in partial prediction (although there is a tendency).
+%% It makes it difficult to connect both of them, so just focus on partial prediction method. I have shuffling for it too.
+%% It is good enough to know that there is a correlation.
+
+%% Try finding the right threshold from shuffling
+% std of each DE diff, calculated back from error ratio (stupid...)
+% plot each partial DE diff value to each std (one plot for touch another
+% for WTV)
+clear
+baseDir = 'C:\JK\';
+cd(baseDir)
+load('glm_cell_function_error_ratio_withWTV_shuffling', 'naive', 'expert');
+
+touchSTD = cell(12,1);
+WTVSTD = cell(12,1);
+for i = 1 : 12
+    fullDEdiff = cell2mat(naive(i).DEdiff);
+    
+    DEdiffFromFull = fullDEdiff(:,[1,6]);
+    
+    touchSTD{i} = find(DEdiffFromFull(:,1) < 0.1);
+    WTVSTD{i} = find(DEdiffFromFull(:,2) < 0.1);
+end
+
 
 
 
