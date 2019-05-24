@@ -19,6 +19,9 @@ cd(baseDir)
 fullModel = load('glm_cell_function_error_ratio_withWTV_shuffling', 'naive', 'expert');
 wtvModel = load('glm_cell_function_error_ratio_WTV_ONLY', 'naive', 'expert');
 touchModel = load('glm_results_responseType', 'naive', 'expert');
+angleInfo = load('angle_tuning_summary','naive','expert');
+
+colors = [jet(7); 0.7, 0.7, 0.7];
 
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3]}; 
@@ -398,8 +401,8 @@ mean(thresholds)
 std(thresholds)/sqrt(12)
 
 %% What about all naive among wkv cells? (listening more to wkv instead of angle identity)
-cd(baseDir)
-wtvModel = load('glm_cell_function_error_ratio_WTV_ONLY', 'naive', 'expert');
+% cd(baseDir)
+% wtvModel = load('glm_cell_function_error_ratio_WTV_ONLY', 'naive', 'expert');
 
 wtvNaive = zeros(12,13);
 for i = 1 : 12
@@ -418,3 +421,330 @@ xticklabels({'max\Delta\kappa_H', 'max\Delta\kappa_V', 'max\Delta\theta', 'max\D
 xtickangle(45)
 set(gca, 'box', 'off')
 
+
+
+%% where are these wkv cells and angle cells?
+% L2/3 C2, L2/3 non-C2, L4 C2, and L4 non-C2
+
+L23C2val = zeros(12,2); % 1 - wkv, 2 - angle
+L23nonC2val = zeros(12,2);
+L4C2val = zeros(12,2);
+L4nonC2val = zeros(12,2);
+for mi = 1 : 12    
+    cID = wtvModel.naive(mi).cID; % touch cells    
+    DEdiffFromPartial = zeros(length(cID),2); 
+    cinds = find(ismember(touchModel.naive(mi).cellID, cID));
+    DEdiffFromPartial(:,1) = fullModel.naive(mi).devExp - wtvModel.naive(mi).devExp; % how much does touch predictors affect the prediction?
+    DEdiffFromPartial(:,2) = fullModel.naive(mi).devExp - touchModel.naive(mi).allDE(cinds); % how much does wtv predictors affect the prediction?
+
+    tempDiff = DEdiffFromPartial(:,2)-DEdiffFromPartial(:,1);
+    threshold = std(tempDiff);
+    wkvCellInd = find(tempDiff < -threshold);
+    angleCellInd = find(tempDiff > threshold);
+    
+    L23ind = find(info.naive(mi).cellDepths(find(ismember(info.naive(mi).cellNums, wtvModel.naive(mi).cID))) < 350);
+    L4ind = find(info.naive(mi).cellDepths(find(ismember(info.naive(mi).cellNums, wtvModel.naive(mi).cID))) >= 350);
+    C2ind = find(info.naive(mi).isC2(find(ismember(info.naive(mi).cellNums, wtvModel.naive(mi).cID))));
+    nonC2ind = find(info.naive(mi).isC2(find(1-ismember(info.naive(mi).cellNums, wtvModel.naive(mi).cID))));
+    
+    L23C2val(mi,1) = length(intersect(wkvCellInd,intersect(L23ind,C2ind))) / length(intersect(L23ind, C2ind));
+    L23C2val(mi,2) = length(intersect(angleCellInd,intersect(L23ind,C2ind))) / length(intersect(L23ind, C2ind));
+    
+    L23nonC2val(mi,1) = length(intersect(wkvCellInd,intersect(L23ind,nonC2ind))) / length(intersect(L23ind, nonC2ind));
+    L23nonC2val(mi,2) = length(intersect(angleCellInd,intersect(L23ind,nonC2ind))) / length(intersect(L23ind, nonC2ind));
+    
+    L4C2val(mi,1) = length(intersect(wkvCellInd,intersect(L4ind,C2ind))) / length(intersect(L4ind, C2ind));
+    L4C2val(mi,2) = length(intersect(angleCellInd,intersect(L4ind,C2ind))) / length(intersect(L4ind, C2ind));
+    
+    L4nonC2val(mi,1) = length(intersect(wkvCellInd,intersect(L4ind,nonC2ind))) / length(intersect(L4ind, nonC2ind));
+    L4nonC2val(mi,2) = length(intersect(angleCellInd,intersect(L4ind,nonC2ind))) / length(intersect(L4ind, nonC2ind));
+end
+figure,
+bar(1:4, [mean(sum(L23C2val,2)), mean(sum(L23nonC2val,2)), mean(sum(L4C2val,2)), nanmean(sum(L4nonC2val,2))]), hold on
+bar(1:4, [mean(L23C2val(:,1)), mean(L23nonC2val(:,1)), mean(L4C2val(:,1)), nanmean(L4nonC2val(:,1))])
+
+%% expert
+
+L23C2val = zeros(6,2); % 1 - wkv, 2 - angle
+L23nonC2val = zeros(6,2);
+L4C2val = zeros(6,2);
+L4nonC2val = zeros(6,2);
+for mi = 1 : 6
+    cID = wtvModel.expert(mi).cID; % touch cells    
+    DEdiffFromPartial = zeros(length(cID),2); 
+    cinds = find(ismember(touchModel.expert(mi).cellID, cID));
+    DEdiffFromPartial(:,1) = fullModel.expert(mi).devExp - wtvModel.expert(mi).devExp; % how much does touch predictors affect the prediction?
+    DEdiffFromPartial(:,2) = fullModel.expert(mi).devExp - touchModel.expert(mi).allDE(cinds); % how much does wtv predictors affect the prediction?
+
+    tempDiff = DEdiffFromPartial(:,2)-DEdiffFromPartial(:,1);
+    threshold = std(tempDiff);
+    wkvCellInd = find(tempDiff < -threshold);
+    angleCellInd = find(tempDiff > threshold);
+    
+    L23ind = find(info.expert(mi).cellDepths(find(ismember(info.expert(mi).cellNums, wtvModel.expert(mi).cID))) < 350);
+    L4ind = find(info.expert(mi).cellDepths(find(ismember(info.expert(mi).cellNums, wtvModel.expert(mi).cID))) >= 350);
+    C2ind = find(info.expert(mi).isC2(find(ismember(info.expert(mi).cellNums, wtvModel.expert(mi).cID))));
+    nonC2ind = find(info.expert(mi).isC2(find(1-ismember(info.expert(mi).cellNums, wtvModel.expert(mi).cID))));
+    
+    L23C2val(mi,1) = length(intersect(wkvCellInd,intersect(L23ind,C2ind))) / length(intersect(L23ind, C2ind));
+    L23C2val(mi,2) = length(intersect(angleCellInd,intersect(L23ind,C2ind))) / length(intersect(L23ind, C2ind));
+    
+    L23nonC2val(mi,1) = length(intersect(wkvCellInd,intersect(L23ind,nonC2ind))) / length(intersect(L23ind, nonC2ind));
+    L23nonC2val(mi,2) = length(intersect(angleCellInd,intersect(L23ind,nonC2ind))) / length(intersect(L23ind, nonC2ind));
+    
+    L4C2val(mi,1) = length(intersect(wkvCellInd,intersect(L4ind,C2ind))) / length(intersect(L4ind, C2ind));
+    L4C2val(mi,2) = length(intersect(angleCellInd,intersect(L4ind,C2ind))) / length(intersect(L4ind, C2ind));
+    
+    L4nonC2val(mi,1) = length(intersect(wkvCellInd,intersect(L4ind,nonC2ind))) / length(intersect(L4ind, nonC2ind));
+    L4nonC2val(mi,2) = length(intersect(angleCellInd,intersect(L4ind,nonC2ind))) / length(intersect(L4ind, nonC2ind));
+end
+figure,
+bar(1:4, [mean(sum(L23C2val,2)), mean(sum(L23nonC2val,2)), mean(sum(L4C2val,2)), nanmean(sum(L4nonC2val,2))]), hold on
+bar(1:4, [mean(L23C2val(:,1)), mean(L23nonC2val(:,1)), mean(L4C2val(:,1)), nanmean(L4nonC2val(:,1))])
+
+
+
+%% Results: inconclusive. 
+%% Not interpretable.
+
+
+%% More # of cells are tuned to 45 and 135 degrees. 
+%% Are these because of dKv, slide distance, abs dKv, and abs dPhi?
+% dKv: 2, slide distance: 5, |dKv|: 7, |dPhi|: 8
+% Look at distribution of DE diff in different tuned-angles.
+% from all touch cells pooled from all mice
+
+%% naive
+wkvInds = [2,5,7,8];
+range = 0:0.001:0.1;
+tunedAngles = [45:15:135, 0];
+
+figure,
+for wi = 1 : length(wkvInds)
+    % angleGroupInds = cell(1,length(tunedAngles));
+    dediffdist = cell(length(tunedAngles),1);
+    % zeros(length(tunedAngles),length(range)-1);
+    for ai = 1 : length(tunedAngles)
+    % for ai = 5
+    %     angleGroupInds{ai} = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
+    % dediffdist(ai,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(angleGroupInds{ai},2), range, 'normalization', 'cdf');
+        dediffdist{ai} = zeros(length(wtvModel.naive),length(range)-1);
+        for mi = 1 : length(wtvModel.naive)
+    %     for mi = 3
+            tempInds = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
+            tempVal = wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi));
+            tempVal(tempVal>max(range)) = max(range)-mean(diff(range))/2;
+            tempVal(tempVal<min(range)) = min(range);
+%             dediffdist{ai}(mi,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi)), range, 'normalization', 'cdf');
+            dediffdist{ai}(mi,:) = histcounts(tempVal, range, 'normalization', 'cdf');
+        end
+    end
+    subplot(2,2,wi), hold on
+    for ai = 1 : length(tunedAngles)
+        plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
+    end
+    a = range(2:end);
+
+    for ai = 1 : length(tunedAngles)
+        boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)), 'cmap', colors(ai,:))
+    % boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)))
+    end
+    for ai = 1 : length(tunedAngles)
+        plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
+    end
+    if wi == 1
+        legend({'45\circ','60\circ','75\circ','90\circ','105\circ','120\circ','135\circ','None'})
+    end
+    ylim([0 1])
+    if wi == 3 || wi == 4
+        xlabel('DE diff')
+    end
+    if wi == 1 || wi == 3
+        ylabel('Cumulative proportion')
+    end
+    switch wi
+        case 1
+            title('\Delta\kappa_V')
+        case 2
+            title('Slide distance')
+            xlim([0 0.05])
+        case 3
+            title('|\Delta\kappa_V|')
+            xlim([0 0.05])
+        case 4
+            title('|\Delta\phi|')
+            xlim([0 0.03])
+    end
+end
+
+%% control: at touch variables
+wkvInds = [10,11,12,13];
+figure,
+for wi = 1 : length(wkvInds)
+    % angleGroupInds = cell(1,length(tunedAngles));
+    dediffdist = cell(length(tunedAngles),1);
+    % zeros(length(tunedAngles),length(range)-1);
+    for ai = 1 : length(tunedAngles)
+    % for ai = 5
+    %     angleGroupInds{ai} = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
+    % dediffdist(ai,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(angleGroupInds{ai},2), range, 'normalization', 'cdf');
+        dediffdist{ai} = zeros(length(wtvModel.naive),length(range)-1);
+        for mi = 1 : length(wtvModel.naive)
+    %     for mi = 3
+    
+            tempInds = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
+            tempVal = wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi));
+            tempVal(tempVal>max(range)) = max(range)-mean(diff(range))/2;
+            tempVal(tempVal<min(range)) = min(range);
+%             dediffdist{ai}(mi,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi)), range, 'normalization', 'cdf');
+            dediffdist{ai}(mi,:) = histcounts(tempVal, range, 'normalization', 'cdf');
+        end
+    end
+    subplot(2,2,wi), hold on
+    for ai = 1 : length(tunedAngles)
+        plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
+    end
+    a = range(2:end);
+
+    for ai = 1 : length(tunedAngles)
+        boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)), 'cmap', colors(ai,:))
+    % boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)))
+    end
+    for ai = 1 : length(tunedAngles)
+        plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
+    end
+    if wi == 1
+        legend({'45\circ','60\circ','75\circ','90\circ','105\circ','120\circ','135\circ','None'})
+    end
+    ylim([0 1])
+    if wi == 3 || wi == 4
+        xlabel('DE diff')
+    end
+    if wi == 1 || wi == 3
+        ylabel('Cumulative proportion')
+    end
+    switch wi
+        case 1
+            title('\phi')
+            xlim([0 0.05])
+        case 2
+            title('\kappa_H')
+            xlim([0 0.05])
+        case 3
+            title('\kappa_V')
+            xlim([0 0.05])
+        case 4
+            title('Touch count')
+%             xlim([0 0.03])
+    end
+end
+
+%% Result: 45 and 135 degrees fitting are better explained by during touch variables than at touch variables
+
+%% How well different types of tuning explained by wkv?
+
+wkvInds = [2,5,7,8];
+figure,
+for wi = 1 : length(wkvInds)
+
+    dediffdist = cell(3,1); % 1: single, 2: broad, 3: complex
+
+    for ti = 1 : 3
+    % for ai = 5
+    %     angleGroupInds{ai} = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
+    % dediffdist(ai,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(angleGroupInds{ai},2), range, 'normalization', 'cdf');
+        dediffdist{ti} = zeros(length(wtvModel.naive),length(range)-1);
+        for mi = 1 : length(wtvModel.naive)
+    %     for mi = 3
+            midAngleInds = find(angleInfo.naive(mi).tunedAngle < 135 & angleInfo.naive(mi).tunedAngle > 45);
+            switch ti 
+                case 1
+                    tempInds = intersect(find(angleInfo.naive(mi).unimodalSingle),midAngleInds);
+                case 2
+                    tempInds = intersect(find(angleInfo.naive(mi).unimodalBroad),midAngleInds);
+                case 3
+                    tempInds = intersect(find(angleInfo.naive(mi).multimodal),midAngleInds);
+            end
+            tempVal = wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi));
+            tempVal(tempVal>max(range)) = max(range)-mean(diff(range))/2;
+            tempVal(tempVal<min(range)) = min(range);
+%             dediffdist{ai}(mi,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi)), range, 'normalization', 'cdf');
+            dediffdist{ti}(mi,:) = histcounts(tempVal, range, 'normalization', 'cdf');
+        end
+    end
+    subplot(2,2,wi), hold on
+    for ti = 1 : 3
+        plot(range(2:end), nanmean(dediffdist{ti}))
+    end
+    a = range(2:end);
+
+%     for ti = 1 : 3
+%         boundedline(a,  [mean(dediffdist{ti})], [std(dediffdist{ti})]/sqrt(length(wtvModel.naive)), 'cmap', colors(ti,:))
+%     end
+%     for ti = 1 : 3
+%         plot(range(2:end), mean(dediffdist{ti}), 'color', colors(ti,:))
+%     end
+    if wi == 1
+        legend({'Single','Broad','Complex'})
+    end
+    ylim([0 1])
+    if wi == 3 || wi == 4
+        xlabel('DE diff')
+    end
+    if wi == 1 || wi == 3
+        ylabel('Cumulative proportion')
+    end
+
+    switch wi
+        case 1
+            title('\Delta\kappa_V')
+        case 2
+            title('Slide distance')
+            xlim([0 0.05])
+        case 3
+            title('|\Delta\kappa_V|')
+            xlim([0 0.05])
+        case 4
+            title('|\Delta\phi|')
+            xlim([0 0.03])
+    end
+end
+
+%% Results: single tuning cells without 45 and 135 seems to be very small in number.
+%% Maybe most of single tuning cells are tuned to 45 and 135 degrees, 
+%% mostly because of tuning to during touch features. (shown just above)
+
+
+%% What are the proportions of extreme angle-tuned cells in each category?
+props = zeros(length(wtvModel.naive),3); % 1 : unimodal single, 2: unimodal broad, 3: multimodal
+for mi = 1 : length(wtvModel.naive)
+    props(mi,1) = ( length(intersect(find(angleInfo.naive(mi).tunedAngle == 135), find(angleInfo.naive(mi).unimodalSingle))) + ...
+        length(intersect(find(angleInfo.naive(mi).tunedAngle == 45), find(angleInfo.naive(mi).unimodalSingle))) ) / ...
+        sum(angleInfo.naive(mi).unimodalSingle);
+    props(mi,2) = ( length(intersect(find(angleInfo.naive(mi).tunedAngle == 135), find(angleInfo.naive(mi).unimodalBroad))) + ...
+        length(intersect(find(angleInfo.naive(mi).tunedAngle == 45), find(angleInfo.naive(mi).unimodalBroad))) ) / ...
+        sum(angleInfo.naive(mi).unimodalBroad);
+    props(mi,3) = ( length(intersect(find(angleInfo.naive(mi).tunedAngle == 135), find(angleInfo.naive(mi).multimodal))) + ...
+        length(intersect(find(angleInfo.naive(mi).tunedAngle == 45), find(angleInfo.naive(mi).multimodal))) ) / ...
+        sum(angleInfo.naive(mi).multimodal);
+end
+mean(props)
+std(props)/sqrt(length(wtvModel.naive))
+
+%% expert
+props = zeros(length(wtvModel.expert),3); % 1 : unimodal single, 2: unimodal broad, 3: multimodal
+for mi = 1 : length(wtvModel.expert)
+    props(mi,1) = ( length(intersect(find(angleInfo.expert(mi).tunedAngle == 135), find(angleInfo.expert(mi).unimodalSingle))) + ...
+        length(intersect(find(angleInfo.expert(mi).tunedAngle == 45), find(angleInfo.expert(mi).unimodalSingle))) ) / ...
+        sum(angleInfo.expert(mi).unimodalSingle);
+    props(mi,2) = ( length(intersect(find(angleInfo.expert(mi).tunedAngle == 135), find(angleInfo.expert(mi).unimodalBroad))) + ...
+        length(intersect(find(angleInfo.expert(mi).tunedAngle == 45), find(angleInfo.expert(mi).unimodalBroad))) ) / ...
+        sum(angleInfo.expert(mi).unimodalBroad);
+    props(mi,3) = ( length(intersect(find(angleInfo.expert(mi).tunedAngle == 135), find(angleInfo.expert(mi).multimodal))) + ...
+        length(intersect(find(angleInfo.expert(mi).tunedAngle == 45), find(angleInfo.expert(mi).multimodal))) ) / ...
+        sum(angleInfo.expert(mi).multimodal);
+end
+mean(props)
+std(props)/sqrt(length(wtvModel.expert))
+
+%% Results: most of unimodal single tuning cells are tuned to 45 and 135 degrees.
