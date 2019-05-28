@@ -18,16 +18,22 @@
 
 % 2019/04/08 JK
 
+% Updates:
+% include not tuned response cells 2019/05/28 JK
+
 % settings
 clear
 baseDir = 'D:\TPM\JK\suite2p\';
-mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+% mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
+% naiveMi = 1:12;
+% expertMi = [1,2,3,4,7,9];
+% L4Mi = 13:16;
+
+mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
-L4Mi = 13:16;
-% mice = [38,41];
-% sessions = {[2],[3]};
 
 angles = 45:15:135;
 thresholdAnovaP = 0.05; 
@@ -109,12 +115,13 @@ for mi = 1 : length(mice)
         caramp = zeros(length(touchID),1);
         camodulation = zeros(length(touchID),1);
         casharpness = zeros(length(touchID),1);
-        caNTamplitude = zeros(length(touchID),1); % for not-tuned cells
-        caNTdirection = zeros(length(touchID),1); % for not-tuned cells
+        caNTR = zeros(length(touchID),1);
+        caNTRamplitude = zeros(length(touchID),1); % for not-tuned cells
+        caNTRdirection = zeros(length(touchID),1); % for not-tuned cells
         caValAll = cell(length(touchID),1);
         
         spk.touchID = touchID;
-        spktuned = zeros(length(touchID),1);
+        spktuned = zeros(length(touchID),1);        
         spktunedAngle = zeros(length(touchID),1);
         spktuneDirection = zeros(length(touchID),1);
         spkunimodalSingle = zeros(length(touchID),1);
@@ -125,8 +132,9 @@ for mi = 1 : length(mice)
         spkramp = zeros(length(touchID),1);
         spkmodulation = zeros(length(touchID),1);
         spksharpness = zeros(length(touchID),1);
-        spkNTamplitude = zeros(length(touchID),1); % for not-tuned cells
-        spkNTdirection = zeros(length(touchID),1); % for not-tuned cells        
+        spkNTR = zeros(length(touchID),1);
+        spkNTRamplitude = zeros(length(touchID),1); % for not-tuned cells
+        spkNTRdirection = zeros(length(touchID),1); % for not-tuned cells        
         spkValAll = cell(length(touchID),1);
         
         parfor ci = 1:length(touchID)
@@ -202,14 +210,17 @@ for mi = 1 : length(mice)
                     permmaxmod(ri) = max(permStats.means) - min(permStats.means);
                 end
 
-                if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test
-                    % NT: not tuned
-                    if mean(caAnovaVal) > 0
-                        caNTdirection(ci) = 1;
-                    else
-                        caNTdirection(ci) = 2;
+                if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test                    
+                    % NTR: not tuned response
+                    if ttest(caAnovaVal) % if the response is different from 0
+                        caNTR(ci) = 1;
+                        if mean(caAnovaVal) > 0
+                            caNTRdirection(ci) = 1;
+                        else
+                            caNTRdirection(ci) = 2;
+                        end
+                        caNTRamplitude(ci) = mean(caAnovaVal);
                     end
-                    caNTamplitude(ci) = mean(caAnovaVal);
                 else % passed permutation test. Tuned.
                     catuned(ci) = 1;
                     [~, maxind] = max(abs(caMeans(sigInd)));
@@ -302,12 +313,16 @@ for mi = 1 : length(mice)
                 end
                     
             else % NT: not tuned
-                if mean(caAnovaVal) > 0
-                    caNTdirection(ci) = 1;
-                else
-                    caNTdirection(ci) = 2;
+                % NTR: not tuned response
+                if ttest(caAnovaVal) % if the response is different from 0
+                    caNTR(ci) = 1;
+                    if mean(caAnovaVal) > 0
+                        caNTRdirection(ci) = 1;
+                    else
+                        caNTRdirection(ci) = 2;
+                    end
+                    caNTRamplitude(ci) = mean(caAnovaVal);
                 end
-                caNTamplitude(ci) = mean(caAnovaVal);
             end
             
             %% Then with spikes
@@ -327,13 +342,16 @@ for mi = 1 : length(mice)
                 end
 
                 if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test
-                    % NT: not tuned
-                    if mean(spkAnovaVal) > 0
-                        spkNTdirection(ci) = 1;
-                    else
-                        spkNTdirection(ci) = 2;
+                    % NTR: not tuned response
+                    if ttest(spkAnovaVal) % if the response is different from 0
+                        spkNTR(ci) = 1;
+                        if mean(spkAnovaVal) > 0
+                            spkNTRdirection(ci) = 1;
+                        else
+                            spkNTRdirection(ci) = 2;
+                        end
+                        spkNTRamplitude(ci) = mean(spkAnovaVal);
                     end
-                    spkNTamplitude(ci) = mean(spkAnovaVal);
                 else % passed permutation test. Tuned.
                     spktuned(ci) = 1;
                     [~, maxind] = max(abs(spkMeans(sigInd)));
@@ -426,13 +444,17 @@ for mi = 1 : length(mice)
                         end
                     end
                 end
-            else % NT: not tuned
-                if mean(spkAnovaVal) > 0
-                    spkNTdirection(ci) = 1;
-                else
-                    spkNTdirection(ci) = 2;
+            else 
+                % NTR: not tuned response
+                if ttest(spkAnovaVal) % if the response is different from 0
+                    spkNTR(ci) = 1;
+                    if mean(spkAnovaVal) > 0
+                        spkNTRdirection(ci) = 1;
+                    else
+                        spkNTRdirection(ci) = 2;
+                    end
+                    spkNTRamplitude(ci) = mean(spkAnovaVal);
                 end
-                spkNTamplitude(ci) = mean(spkAnovaVal);
             end            
         end
         
@@ -447,8 +469,9 @@ for mi = 1 : length(mice)
         ca.ramp = caramp;
         ca.modulation = camodulation;
         ca.sharpness = casharpness;
-        ca.NTamplitude = caNTamplitude;
-        ca.NTdirection = caNTdirection;
+        ca.NTR = caNTR;
+        ca.NTRamplitude = caNTRamplitude;
+        ca.NTRdirection = caNTRdirection;
         ca.val = caValAll;
         
         spk.tuned = spktuned;
@@ -462,8 +485,9 @@ for mi = 1 : length(mice)
         spk.ramp = spkramp;
         spk.modulation = spkmodulation;
         spk.sharpness = spksharpness;
-        spk.NTamplitude = spkNTamplitude;
-        spk.NTdirection = spkNTdirection;
+        spk.NTR = spkNTR;
+        spk.NTRamplitude = spkNTRamplitude;
+        spk.NTRdirection = spkNTRdirection;
         spk.val = spkValAll;
         
         info.cellID = u.cellNums;
