@@ -36,6 +36,6 @@ end
 
 %% plot
 figure; hold on;
-shadedErrorBar(1:nCells, mean(accuracy), std(accuracy), 'b')
-shadedErrorBar(1:nCells, mean(accuracyShuffled), std(accuracyShuffled), 'r')
+shadedErrorBar(1:nCells, mean(accuracy), std(accuracy), 'lineprops','b')
+shadedErrorBar(1:nCells, mean(accuracyShuffled), std(accuracyShuffled), 'lineprops','r')
 ylim([0 1]);

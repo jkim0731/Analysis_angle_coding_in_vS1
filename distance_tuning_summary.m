@@ -49,4 +49,4 @@ end
 % end
 
 cd(baseDir)
-save('angle_tuning_summary.mat','naive','expert')
+save('distance_tuning_summary.mat','naive','expert')
