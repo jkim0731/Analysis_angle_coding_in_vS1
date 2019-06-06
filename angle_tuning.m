@@ -20,14 +20,16 @@
 
 % settings
 clear
-baseDir = 'C:\JK\';
-mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
+baseDir = 'D:\TPM\JK\suite2p\';
+% mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
+% naiveMi = 1:12;
+% expertMi = [1,2,3,4,7,9];
+% L4Mi = 13:16;
+mice = [25,27,30,36,37,38,39,41,52,53,54,56];
+sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
-L4Mi = 13:16;
-% mice = [38,41];
-% sessions = {[2],[3]};
 
 angles = 45:15:135;
 thresholdAnovaP = 0.05; 
@@ -42,12 +44,12 @@ numResampling = 10000; % permutation test
 cd(baseDir)
 load('cellFunctionRidgeDE010.mat')
 
-% for mi = 1 : length(mice)    
-for mi = 4:8
+for mi = 1 : length(mice)    
+% for mi = 1
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
     for si = 1 : length(sessions{mi})
-%     for si = 2
+%     for si = 1
 
         session = sessions{mi}(si);
         
@@ -99,10 +101,12 @@ for mi = 4:8
         if si == 2
             glmi = find(expertMi == mi);
             glm = expert(glmi);
-        elseif mi < L4Mi(1)
-            glm = naive(mi);
+%         elseif mi < L4Mi(1)
+%             glm = naive(mi);
+%         else
+%             glm = L4(find(L4Mi == mi));
         else
-            glm = L4(find(L4Mi == mi));
+            glm = naive(mi);
         end        
         touchID = glm.touchID;        
         if size(touchID,1) < size(touchID,2)
@@ -113,6 +117,7 @@ for mi = 4:8
         
         ca.touchID = touchID;
         catuned = zeros(length(touchID),1);
+        caAnovaPAll = zeros(length(touchID),1);
         catunedAngle = zeros(length(touchID),1);
         catuneDirection = zeros(length(touchID),1);
         caunimodalSingle = zeros(length(touchID),1);
@@ -129,6 +134,7 @@ for mi = 4:8
         
         spk.touchID = touchID;
         spktuned = zeros(length(touchID),1);
+        spkAnovaPAll = zeros(length(touchID),1);
         spktunedAngle = zeros(length(touchID),1);
         spktuneDirection = zeros(length(touchID),1);
         spkunimodalSingle = zeros(length(touchID),1);
@@ -144,6 +150,7 @@ for mi = 4:8
         spkValAll = cell(length(touchID),1);
         
         parfor ci = 1:length(touchID)
+%         for ci = 195
             fprintf('Processing JK%03d S%02d touch cell %d / %d\n', mouse, session, ci, length(touchID))
             cellNum = touchID(ci);
             plane = floor(cellNum/1000);
@@ -188,13 +195,15 @@ for mi = 4:8
                 error('nan values')
             end
             groupAnova = zeros(size(caAnovaVal));
-            angleLengths = [1;cumsum(cellfun(@length, caVal))];
+            angleLengths = [0;cumsum(cellfun(@length, caVal))];
             for ai = 1 : length(angles)
-                groupAnova(angleLengths(ai):angleLengths(ai+1)) = deal(ai);
+                groupAnova(angleLengths(ai)+1:angleLengths(ai+1)) = deal(ai);
             end
                         
             [caAnovaP, ~, caAnovaStat] = anova1(caAnovaVal, groupAnova, 'off');
+            caAnovaPAll(ci) = caAnovaP;
             [spkAnovaP, ~, spkAnovaStat] = anova1(spkAnovaVal, groupAnova, 'off');
+            spkAnovaPAll(ci) = spkAnovaP;
             caPairComp = multcompare(caAnovaStat, 'Ctype', anovactype, 'Display', 'off');
             spkPairComp = multcompare(spkAnovaStat, 'Ctype', anovactype, 'Display', 'off');
             caMeans = caAnovaStat.means;
@@ -216,7 +225,7 @@ for mi = 4:8
                     permmaxmod(ri) = max(permStats.means) - min(permStats.means);
                 end
 
-                if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test
+                if length(find(permAnovaP < caAnovaP)) >= 0.05 * numResampling % failed to pass permutation test
                     % NT: not tuned
                     if mean(caAnovaVal) > 0
                         caNTdirection(ci) = 1;
@@ -340,7 +349,7 @@ for mi = 4:8
                     permmaxmod(ri) = max(permStats.means) - min(permStats.means);
                 end
 
-                if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test
+                if length(find(permAnovaP < spkAnovaP)) >= 0.05 * numResampling % failed to pass permutation test
                     % NT: not tuned
                     if mean(spkAnovaVal) > 0
                         spkNTdirection(ci) = 1;
@@ -451,6 +460,7 @@ for mi = 4:8
         end
         
         ca.tuned = catuned;
+        ca.anovaP = caAnovaPAll;
         ca.tunedAngle = catunedAngle;
         ca.tuneDirection = catuneDirection;
         ca.unimodalSingle = caunimodalSingle;
@@ -466,6 +476,7 @@ for mi = 4:8
         ca.val = caValAll;
         
         spk.tuned = spktuned;
+        spk.anovaP = spkAnovaPAll;
         spk.tunedAngle = spktunedAngle;
         spk.tuneDirection = spktuneDirection;
         spk.unimodalSingle = spkunimodalSingle;

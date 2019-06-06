@@ -149,9 +149,9 @@ for mi = 1 : length(mice)
             %% ANOVA
             spkAnovaVal = cell2mat(spkVal);
             groupAnova = zeros(size(spkAnovaVal));
-            angleLengths = [1;cumsum(cellfun(@length, spkVal))];
+            angleLengths = [0;cumsum(cellfun(@length, spkVal))];
             for ai = 1 : length(angles)
-                groupAnova(angleLengths(ai):angleLengths(ai+1)) = deal(ai);
+                groupAnova(angleLengths(ai)+1:angleLengths(ai+1)) = deal(ai);
             end
             [spkAnovaP, ~, spkAnovaStat] = anova1(spkAnovaVal, groupAnova, 'off');
             spkPairComp = multcompare(spkAnovaStat, 'Ctype', anovactype, 'Display', 'off');

@@ -67,21 +67,21 @@ for ei = 1 : length(expertInds)
     end
 end
 
-for si = 1 : length(scnnInds)
-    mouse = mice(scnnInds(si));
-    cd(sprintf('%s%03d',baseDir, mouse))
-    session = sessions{scnnInds(si)}(1);
-    load(sprintf('JK%03dS%02dangle_tuning',mouse,session), 'spk')
-    fieldnames = fields(spk);
-    for fi = 1 : length(fieldnames)
-        
-        L4(si).(fieldnames{fi}) = spk.(fieldnames{fi});
-        
-    end
-end
+% for si = 1 : length(scnnInds)
+%     mouse = mice(scnnInds(si));
+%     cd(sprintf('%s%03d',baseDir, mouse))
+%     session = sessions{scnnInds(si)}(1);
+%     load(sprintf('JK%03dS%02dangle_tuning',mouse,session), 'spk')
+%     fieldnames = fields(spk);
+%     for fi = 1 : length(fieldnames)
+%         
+%         L4(si).(fieldnames{fi}) = spk.(fieldnames{fi});
+%         
+%     end
+% end
 
 cd(baseDir)
-save('angle_tuning_summary.mat','naive','expert','L4')
+save('angle_tuning_summary.mat','naive','expert')
 
 %%
 cd(baseDir)

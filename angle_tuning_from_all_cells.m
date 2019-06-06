@@ -2,9 +2,9 @@
 
 % 1) z-score of calcium response. pole up frames / before pole up frames (calcium)
 % 2) # of spikes during touch frames + [0:2] / before pole up (spkPole)
-% Only from trials with touch
+% from all the cells
 % run ANOVA
-% permutation tests from tuned cells
+% permutation tests for tuned cells
 % final decision of tuned cells
 % 
 % From tuned cells calculate:
@@ -31,7 +31,7 @@ baseDir = 'D:\TPM\JK\suite2p\';
 % L4Mi = 13:16;
 
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
+sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
 
@@ -49,11 +49,11 @@ cd(baseDir)
 
 
 for mi = 1 : length(mice)    
-% for mi = 4:8
+% for mi = 1
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
     for si = 1 : length(sessions{mi})
-%     for si = 2
+%     for si = 1
 
         session = sessions{mi}(si);
         
@@ -105,6 +105,7 @@ for mi = 1 : length(mice)
         
         ca.touchID = touchID;
         catuned = zeros(length(touchID),1);
+        caAnovaPAll = zeros(length(touchID),1);
         catunedAngle = zeros(length(touchID),1);
         catuneDirection = zeros(length(touchID),1);
         caunimodalSingle = zeros(length(touchID),1);
@@ -121,7 +122,8 @@ for mi = 1 : length(mice)
         caValAll = cell(length(touchID),1);
         
         spk.touchID = touchID;
-        spktuned = zeros(length(touchID),1);        
+        spktuned = zeros(length(touchID),1);
+        spkAnovaPAll = zeros(length(touchID),1);
         spktunedAngle = zeros(length(touchID),1);
         spktuneDirection = zeros(length(touchID),1);
         spkunimodalSingle = zeros(length(touchID),1);
@@ -182,13 +184,15 @@ for mi = 1 : length(mice)
                 error('nan values')
             end
             groupAnova = zeros(size(caAnovaVal));
-            angleLengths = [1;cumsum(cellfun(@length, caVal))];
+            angleLengths = [0;cumsum(cellfun(@length, caVal))];
             for ai = 1 : length(angles)
-                groupAnova(angleLengths(ai):angleLengths(ai+1)) = deal(ai);
+                groupAnova(angleLengths(ai)+1:angleLengths(ai+1)) = deal(ai);
             end
                         
             [caAnovaP, ~, caAnovaStat] = anova1(caAnovaVal, groupAnova, 'off');
+            caAnovaPAll(ci) = caAnovaP;
             [spkAnovaP, ~, spkAnovaStat] = anova1(spkAnovaVal, groupAnova, 'off');
+            spkAnovaPAll(ci) = spkAnovaP;
             caPairComp = multcompare(caAnovaStat, 'Ctype', anovactype, 'Display', 'off');
             spkPairComp = multcompare(spkAnovaStat, 'Ctype', anovactype, 'Display', 'off');
             caMeans = caAnovaStat.means;
@@ -198,21 +202,118 @@ for mi = 1 : length(mice)
             tempH = cellfun(@(x) ttest(x), caVal);
             tempH(isnan(tempH)) = deal(0);
             sigInd = find(tempH); % significant indices
-            if caAnovaP < thresholdAnovaP && ~isempty(sigInd)
-                % permutation test
-                maxmod = max(caMeans) - min(caMeans);
-                permAnovaP = zeros(numResampling,1);
-                permmaxmod = zeros(numResampling,1);
-%                 parfor ri = 1 : numResampling
-                for ri = 1 : numResampling
-                    tempG = groupAnova(randperm(length(groupAnova),length(groupAnova)));
-                    [permAnovaP(ri), ~, permStats] = anova1(caAnovaVal, tempG, 'off');
-                    permmaxmod(ri) = max(permStats.means) - min(permStats.means);
-                end
+            tunedFlag = 0;
+            if ~isnan(caAnovaP)
+                if caAnovaP < thresholdAnovaP && ~isempty(sigInd)
+                    % permutation test
+                    maxmod = max(caMeans) - min(caMeans);
+                    permAnovaP = zeros(numResampling,1);
+                    permmaxmod = zeros(numResampling,1);
+    %                 parfor ri = 1 : numResampling
+                    for ri = 1 : numResampling
+                        tempG = groupAnova(randperm(length(groupAnova),length(groupAnova)));
+                        [permAnovaP(ri), ~, permStats] = anova1(caAnovaVal, tempG, 'off');
+                        permmaxmod(ri) = max(permStats.means) - min(permStats.means);
+                    end
 
-                if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test                    
-                    % NTR: not tuned response
-                    if ttest(caAnovaVal) % if the response is different from 0
+                    if length(find(permAnovaP < caAnovaP)) < 0.05 * numResampling % passed permutation test. Tuned.
+                        tunedFlag = 1; % necessary to have this for parfor loop
+                        catuned(ci) = 1;
+                        [~, maxind] = max(abs(caMeans(sigInd)));
+                        tunedAngleInd = sigInd(maxind);
+                        catunedAngle(ci) = angles(tunedAngleInd);
+
+                        maxVal = max(caMeans(sigInd));
+                        minVal = min(caMeans(sigInd));
+                        if minVal > 0
+                            catuneDirection(ci) = 1;
+                        elseif maxVal < 0 
+                            catuneDirection(ci) = 2;
+                        elseif maxVal > 0 && minVal < 0
+                            catuneDirection(ci) = 3;
+                        else
+                            catuneDirection(ci) = -1; % error
+                        end
+                        camodulation(ci) = max(caMeans) - min(caMeans);
+                        casharpness(ci) = caMeans(tunedAngleInd) - mean(caMeans(setdiff(1:length(angles), tunedAngleInd)));
+
+                        % Categorization
+                        ind__1 = find(caPairComp(:,1) == tunedAngleInd);
+                        ind__2 = find(caPairComp(:,2) == tunedAngleInd);
+                        testInd = union(ind__1, ind__2);
+                        insigDiffInd = find(caPairComp(testInd,6) >= thresholdCategory);
+                        sigDiffInd = find(caPairComp(testInd,6) < thresholdCategory);
+                        temp = caPairComp(testInd(insigDiffInd),1:2);
+                        insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
+
+                        if isempty(insigDiffIndGroup)
+                            caunimodalSingle(ci) = 1;
+                        else
+                            broadInd = intersect(sigInd,insigDiffIndGroup);
+                            if length(broadInd) < 2
+                                caunimodalSingle(ci) = 1;
+                            else                            
+                                broadNum = 1;
+                                for tunei = tunedAngleInd-1:-1:1
+                                    if ismember(tunei, broadInd)
+                                        broadNum = broadNum + 1;
+                                    else 
+                                        break
+                                    end
+                                end
+                                for tunei = tunedAngleInd+1:length(angles)
+                                    if ismember(tunei, broadInd)
+                                        broadNum = broadNum + 1;
+                                    end
+                                end
+                                if broadNum == length(broadInd)
+                                    caunimodalBroad(ci) = 1;
+                                    % if broad, then it can be a categorical
+                                    center = (length(angles)+1) / 2;
+                                    compInd = union(find(caPairComp(:,1) == tunedAngleInd), find(caPairComp(:,2) == tunedAngleInd));
+                                    indMat = caPairComp(compInd,1:2);
+                                    if tunedAngleInd < center
+                                        withinInd = unique(mod( setdiff( find(indMat < center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
+                                        withinInd(withinInd==0) = size(indMat,1);
+                                        betweenInd = unique(mod( find(indMat > center) , size(indMat,1) ));
+                                        betweenInd(betweenInd==0) = size(indMat,1);
+                                    else
+                                        withinInd = unique(mod( setdiff( find(indMat > center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
+                                        withinInd(withinInd==0) = size(indMat,1);
+                                        betweenInd = unique(mod( find(indMat < center) , size(indMat,1) ));
+                                        betweenInd(betweenInd==0) = size(indMat,1);
+                                    end
+                                    if isempty(find(caPairComp(compInd(withinInd),6) < thresholdCategory, 1)) && ... % nothing within the same half is different from the max ind
+                                            isempty(find(caPairComp(compInd(betweenInd),6) >= thresholdCategory, 1)) % nothing between different half is same with the max ind
+                                        cacategorical(ci) = 1; % categorical (>= 90 or <= 90)
+                                    end
+                                else
+                                    camultimodal(ci) = 1;
+                                end
+                            end
+                            temp = caPairComp(testInd(sigDiffInd),1:2);
+                            sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
+                            if ~isempty(find(diff(insigDiffIndGroup)>1,1))
+                                if sum(tempH(sigIndGroup))
+                                    camultimodal(ci) = 1; % multimodal. Including bipolar.
+                                end
+                                if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
+                                        all(tempH(insigDiffIndGroup)) % and all insignicant indices are different from 0
+                                    caleaveOneOut(ci) = 1 ; % leave-one-out. Part of multimodal in definition.
+                                end
+                            end
+                            if isempty(find(diff(sign(diff(caMeans))),1)) % everything is going up or down 
+                                caramp(ci) = 1; % ramping up or down
+                            end
+                        end
+                    end
+                end
+            end
+            if tunedFlag == 0 % not tuned.
+                tval = ttest(caAnovaVal)
+                % NTR: not tuned response
+                if ~isnan(tval)
+                    if tval % if the response is different from 0
                         caNTR(ci) = 1;
                         if mean(caAnovaVal) > 0
                             caNTRdirection(ci) = 1;
@@ -221,107 +322,6 @@ for mi = 1 : length(mice)
                         end
                         caNTRamplitude(ci) = mean(caAnovaVal);
                     end
-                else % passed permutation test. Tuned.
-                    catuned(ci) = 1;
-                    [~, maxind] = max(abs(caMeans(sigInd)));
-                    tunedAngleInd = sigInd(maxind);
-                    catunedAngle(ci) = angles(tunedAngleInd);
-
-                    maxVal = max(caMeans(sigInd));
-                    minVal = min(caMeans(sigInd));
-                    if minVal > 0
-                        catuneDirection(ci) = 1;
-                    elseif maxVal < 0 
-                        catuneDirection(ci) = 2;
-                    elseif maxVal > 0 && minVal < 0
-                        catuneDirection(ci) = 3;
-                    else
-                        catuneDirection(ci) = -1; % error
-                    end
-                    camodulation(ci) = max(caMeans) - min(caMeans);
-                    casharpness(ci) = caMeans(tunedAngleInd) - mean(caMeans(setdiff(1:length(angles), tunedAngleInd)));
-
-                    % Categorization
-                    ind__1 = find(caPairComp(:,1) == tunedAngleInd);
-                    ind__2 = find(caPairComp(:,2) == tunedAngleInd);
-                    testInd = union(ind__1, ind__2);
-                    insigDiffInd = find(caPairComp(testInd,6) >= thresholdCategory);
-                    sigDiffInd = find(caPairComp(testInd,6) < thresholdCategory);
-                    temp = caPairComp(testInd(insigDiffInd),1:2);
-                    insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
-                    
-                    if isempty(insigDiffIndGroup)
-                        caunimodalSingle(ci) = 1;
-                    else
-                        broadInd = intersect(sigInd,insigDiffIndGroup);
-                        if length(broadInd) < 2
-                            caunimodalSingle(ci) = 1;
-                        else                            
-                            broadNum = 1;
-                            for tunei = tunedAngleInd-1:-1:1
-                                if ismember(tunei, broadInd)
-                                    broadNum = broadNum + 1;
-                                else 
-                                    break
-                                end
-                            end
-                            for tunei = tunedAngleInd+1:length(angles)
-                                if ismember(tunei, broadInd)
-                                    broadNum = broadNum + 1;
-                                end
-                            end
-                            if broadNum == length(broadInd)
-                                caunimodalBroad(ci) = 1;
-                                % if broad, then it can be a categorical
-                                center = (length(angles)+1) / 2;
-                                compInd = union(find(caPairComp(:,1) == tunedAngleInd), find(caPairComp(:,2) == tunedAngleInd));
-                                indMat = caPairComp(compInd,1:2);
-                                if tunedAngleInd < center
-                                    withinInd = unique(mod( setdiff( find(indMat < center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
-                                    withinInd(withinInd==0) = size(indMat,1);
-                                    betweenInd = unique(mod( find(indMat > center) , size(indMat,1) ));
-                                    betweenInd(betweenInd==0) = size(indMat,1);
-                                else
-                                    withinInd = unique(mod( setdiff( find(indMat > center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
-                                    withinInd(withinInd==0) = size(indMat,1);
-                                    betweenInd = unique(mod( find(indMat < center) , size(indMat,1) ));
-                                    betweenInd(betweenInd==0) = size(indMat,1);
-                                end
-                                if isempty(find(caPairComp(compInd(withinInd),6) < thresholdCategory, 1)) && ... % nothing within the same half is different from the max ind
-                                        isempty(find(caPairComp(compInd(betweenInd),6) >= thresholdCategory, 1)) % nothing between different half is same with the max ind
-                                    cacategorical(ci) = 1; % categorical (>= 90 or <= 90)
-                                end
-                            else
-                                camultimodal(ci) = 1;
-                            end
-                        end
-                        temp = caPairComp(testInd(sigDiffInd),1:2);
-                        sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
-                        if ~isempty(find(diff(insigDiffIndGroup)>1,1))
-                            if sum(tempH(sigIndGroup))
-                                camultimodal(ci) = 1; % multimodal. Including bipolar.
-                            end
-                            if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
-                                    all(tempH(insigDiffIndGroup)) % and all insignicant indices are different from 0
-                                caleaveOneOut(ci) = 1 ; % leave-one-out. Part of multimodal in definition.
-                            end
-                        end
-                        if isempty(find(diff(sign(diff(caMeans))),1)) % everything is going up or down 
-                            caramp(ci) = 1; % ramping up or down
-                        end
-                    end
-                end
-                    
-            else % NT: not tuned
-                % NTR: not tuned response
-                if ttest(caAnovaVal) % if the response is different from 0
-                    caNTR(ci) = 1;
-                    if mean(caAnovaVal) > 0
-                        caNTRdirection(ci) = 1;
-                    else
-                        caNTRdirection(ci) = 2;
-                    end
-                    caNTRamplitude(ci) = mean(caAnovaVal);
                 end
             end
             
@@ -329,21 +329,121 @@ for mi = 1 : length(mice)
             tempH = cellfun(@(x) ttest(x), spkVal);
             tempH(isnan(tempH)) = deal(0);
             sigInd = find(tempH); % significant indices
-            if spkAnovaP < thresholdAnovaP && ~isempty(sigInd)
-                % permutation test
-                maxmod = max(spkMeans) - min(spkMeans);
-                permAnovaP = zeros(numResampling,1);
-                permmaxmod = zeros(numResampling,1);
-%                 parfor ri = 1 : numResampling
-                for ri = 1 : numResampling
-                    tempG = groupAnova(randperm(length(groupAnova),length(groupAnova)));
-                    [permAnovaP(ri), ~, permStats] = anova1(spkAnovaVal, tempG, 'off');
-                    permmaxmod(ri) = max(permStats.means) - min(permStats.means);
-                end
+            tunedFlag = 0;
+            if ~isnan(spkAnovaP)
+                if spkAnovaP < thresholdAnovaP && ~isempty(sigInd)
+                    % permutation test
+                    maxmod = max(spkMeans) - min(spkMeans);
+                    permAnovaP = zeros(numResampling,1);
+                    permmaxmod = zeros(numResampling,1);
+    %                 parfor ri = 1 : numResampling
+                    for ri = 1 : numResampling
+                        tempG = groupAnova(randperm(length(groupAnova),length(groupAnova)));
+                        [permAnovaP(ri), ~, permStats] = anova1(spkAnovaVal, tempG, 'off');
+                        permmaxmod(ri) = max(permStats.means) - min(permStats.means);
+                    end
 
-                if length(find(permAnovaP < 0.05)) > 0.05 * numResampling && length(find(permmaxmod > maxmod)) > 0.05 * numResampling % failed to pass permutation test
-                    % NTR: not tuned response
-                    if ttest(spkAnovaVal) % if the response is different from 0
+                    if length(find(permAnovaP < spkAnovaP)) < 0.05 * numResampling % passed permutation test. Tuned.
+                        tunedFlag = 1; % necessary to have this for parfor loop
+                        spktuned(ci) = 1;
+                        [~, maxind] = max(abs(spkMeans(sigInd)));
+                        tunedAngleInd = sigInd(maxind);
+                        spktunedAngle(ci) = angles(tunedAngleInd);
+
+                        maxVal = max(spkMeans(sigInd));
+                        minVal = min(spkMeans(sigInd));
+                        if minVal > 0
+                            spktuneDirection(ci) = 1;
+                        elseif maxVal < 0 
+                            spktuneDirection(ci) = 2;
+                        elseif maxVal > 0 && minVal < 0
+                            spktuneDirection(ci) = 3;
+                        else
+                            spktuneDirection(ci) = -1; % error
+                        end
+                        spkmodulation(ci) = max(spkMeans) - min(spkMeans);
+                        spksharpness(ci) = spkMeans(tunedAngleInd) - mean(spkMeans(setdiff(1:length(angles), tunedAngleInd)));
+
+                        % Categorization
+                        ind__1 = find(spkPairComp(:,1) == tunedAngleInd);
+                        ind__2 = find(spkPairComp(:,2) == tunedAngleInd);
+                        testInd = union(ind__1, ind__2);
+                        insigDiffInd = find(spkPairComp(testInd,6) >= thresholdCategory);
+                        sigDiffInd = find(spkPairComp(testInd,6) < thresholdCategory);
+                        temp = spkPairComp(testInd(insigDiffInd),1:2);
+                        insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
+
+                        if isempty(insigDiffIndGroup)
+                            spkunimodalSingle(ci) = 1;
+                        else
+                            broadInd = intersect(sigInd,insigDiffIndGroup);
+                            if length(broadInd) < 2
+                                spkunimodalSingle(ci) = 1;
+                            else                            
+                                broadNum = 1;
+                                for tunei = tunedAngleInd-1:-1:1
+                                    if ismember(tunei, broadInd)
+                                        broadNum = broadNum + 1;
+                                    else 
+                                        break
+                                    end
+                                end
+                                for tunei = tunedAngleInd+1:length(angles)
+                                    if ismember(tunei, broadInd)
+                                        broadNum = broadNum + 1;
+                                    else
+                                        break
+                                    end
+                                end
+                                if broadNum == length(broadInd)
+                                    spkunimodalBroad(ci) = 1;
+                                    % if broad, then it can be a categorical
+                                    center = (length(angles)+1) / 2;
+                                    compInd = union(find(spkPairComp(:,1) == tunedAngleInd), find(spkPairComp(:,2) == tunedAngleInd));
+                                    indMat = spkPairComp(compInd,1:2);
+                                    if tunedAngleInd < center
+                                        withinInd = unique(mod( setdiff( find(indMat < center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
+                                        withinInd(withinInd==0) = size(indMat,1);
+                                        betweenInd = unique(mod( find(indMat > center) , size(indMat,1) ));
+                                        betweenInd(betweenInd==0) = size(indMat,1);
+                                    else
+                                        withinInd = unique(mod( setdiff( find(indMat > center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
+                                        withinInd(withinInd==0) = size(indMat,1);
+                                        betweenInd = unique(mod( find(indMat < center) , size(indMat,1) ));
+                                        betweenInd(betweenInd==0) = size(indMat,1);
+                                    end
+                                    if isempty(find(spkPairComp(compInd(withinInd),6) < thresholdCategory, 1)) && ... % nothing within the same half is different from the max ind
+                                            isempty(find(spkPairComp(compInd(betweenInd),6) >= thresholdCategory, 1)) % nothing between different half is same with the max ind
+                                        spkcategorical(ci) = 1; % categorical (>= 90 or <= 90)
+                                    end
+                                else
+                                    spkmultimodal(ci) = 1;
+                                end
+                            end
+                            temp = spkPairComp(testInd(sigDiffInd),1:2);
+                            sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
+                            if ~isempty(find(diff(insigDiffIndGroup)>1,1))
+                                if sum(tempH(insigDiffIndGroup))>1 % to exclude tuned angle
+                                    spkmultimodal(ci) = 1; % multimodal. Including bipolar.
+                                end
+                                if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
+                                        all(tempH(insigDiffIndGroup)) % and all insignicant indices are different from 0
+                                    spkleaveOneOut(ci) = 1 ; % leave-one-out. Part of multimodal in definition.
+                                end
+                            end
+                            if isempty(find(diff(sign(diff(spkMeans))),1)) % everything is going up or down 
+                                spkramp(ci) = 1; % ramping up or down
+                            end
+                        end
+                    end
+                end
+            end
+            
+            if tunedFlag == 0 % not tuned
+                % NTR: not tuned response
+                tval = ttest(spkAnovaVal);
+                if ~isnan(tval)
+                    if tval % if the response is different from 0
                         spkNTR(ci) = 1;
                         if mean(spkAnovaVal) > 0
                             spkNTRdirection(ci) = 1;
@@ -352,114 +452,13 @@ for mi = 1 : length(mice)
                         end
                         spkNTRamplitude(ci) = mean(spkAnovaVal);
                     end
-                else % passed permutation test. Tuned.
-                    spktuned(ci) = 1;
-                    [~, maxind] = max(abs(spkMeans(sigInd)));
-                    tunedAngleInd = sigInd(maxind);
-                    spktunedAngle(ci) = angles(tunedAngleInd);
-
-                    maxVal = max(spkMeans(sigInd));
-                    minVal = min(spkMeans(sigInd));
-                    if minVal > 0
-                        spktuneDirection(ci) = 1;
-                    elseif maxVal < 0 
-                        spktuneDirection(ci) = 2;
-                    elseif maxVal > 0 && minVal < 0
-                        spktuneDirection(ci) = 3;
-                    else
-                        spktuneDirection(ci) = -1; % error
-                    end
-                    spkmodulation(ci) = max(spkMeans) - min(spkMeans);
-                    spksharpness(ci) = spkMeans(tunedAngleInd) - mean(spkMeans(setdiff(1:length(angles), tunedAngleInd)));
-
-                    % Categorization
-                    ind__1 = find(spkPairComp(:,1) == tunedAngleInd);
-                    ind__2 = find(spkPairComp(:,2) == tunedAngleInd);
-                    testInd = union(ind__1, ind__2);
-                    insigDiffInd = find(spkPairComp(testInd,6) >= thresholdCategory);
-                    sigDiffInd = find(spkPairComp(testInd,6) < thresholdCategory);
-                    temp = spkPairComp(testInd(insigDiffInd),1:2);
-                    insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
-                    
-                    if isempty(insigDiffIndGroup)
-                        spkunimodalSingle(ci) = 1;
-                    else
-                        broadInd = intersect(sigInd,insigDiffIndGroup);
-                        if length(broadInd) < 2
-                            spkunimodalSingle(ci) = 1;
-                        else                            
-                            broadNum = 1;
-                            for tunei = tunedAngleInd-1:-1:1
-                                if ismember(tunei, broadInd)
-                                    broadNum = broadNum + 1;
-                                else 
-                                    break
-                                end
-                            end
-                            for tunei = tunedAngleInd+1:length(angles)
-                                if ismember(tunei, broadInd)
-                                    broadNum = broadNum + 1;
-                                else
-                                    break
-                                end
-                            end
-                            if broadNum == length(broadInd)
-                                spkunimodalBroad(ci) = 1;
-                                % if broad, then it can be a categorical
-                                center = (length(angles)+1) / 2;
-                                compInd = union(find(spkPairComp(:,1) == tunedAngleInd), find(spkPairComp(:,2) == tunedAngleInd));
-                                indMat = spkPairComp(compInd,1:2);
-                                if tunedAngleInd < center
-                                    withinInd = unique(mod( setdiff( find(indMat < center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
-                                    withinInd(withinInd==0) = size(indMat,1);
-                                    betweenInd = unique(mod( find(indMat > center) , size(indMat,1) ));
-                                    betweenInd(betweenInd==0) = size(indMat,1);
-                                else
-                                    withinInd = unique(mod( setdiff( find(indMat > center), find(indMat == tunedAngleInd) ) , size(indMat,1)));
-                                    withinInd(withinInd==0) = size(indMat,1);
-                                    betweenInd = unique(mod( find(indMat < center) , size(indMat,1) ));
-                                    betweenInd(betweenInd==0) = size(indMat,1);
-                                end
-                                if isempty(find(spkPairComp(compInd(withinInd),6) < thresholdCategory, 1)) && ... % nothing within the same half is different from the max ind
-                                        isempty(find(spkPairComp(compInd(betweenInd),6) >= thresholdCategory, 1)) % nothing between different half is same with the max ind
-                                    spkcategorical(ci) = 1; % categorical (>= 90 or <= 90)
-                                end
-                            else
-                                spkmultimodal(ci) = 1;
-                            end
-                        end
-                        temp = spkPairComp(testInd(sigDiffInd),1:2);
-                        sigIndGroup = setdiff(temp(:), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
-                        if ~isempty(find(diff(insigDiffIndGroup)>1,1))
-                            if sum(tempH(insigDiffIndGroup))>1 % to exclude tuned angle
-                                spkmultimodal(ci) = 1; % multimodal. Including bipolar.
-                            end
-                            if length(sigIndGroup) == 1 && ... % only one bin is significantly different from the tuned bin. (can't be larger in response because of the way tuned bin is defined)
-                                    all(tempH(insigDiffIndGroup)) % and all insignicant indices are different from 0
-                                spkleaveOneOut(ci) = 1 ; % leave-one-out. Part of multimodal in definition.
-                            end
-                        end
-                        if isempty(find(diff(sign(diff(spkMeans))),1)) % everything is going up or down 
-                            spkramp(ci) = 1; % ramping up or down
-                        end
-                    end
                 end
-            else 
-                % NTR: not tuned response
-                if ttest(spkAnovaVal) % if the response is different from 0
-                    spkNTR(ci) = 1;
-                    if mean(spkAnovaVal) > 0
-                        spkNTRdirection(ci) = 1;
-                    else
-                        spkNTRdirection(ci) = 2;
-                    end
-                    spkNTRamplitude(ci) = mean(spkAnovaVal);
-                end
-            end            
+            end
         end
         
         ca.tuned = catuned;
         ca.tunedAngle = catunedAngle;
+        ca.anovaP = caAnovaPAll;
         ca.tuneDirection = catuneDirection;
         ca.unimodalSingle = caunimodalSingle;
         ca.unimodalBroad = caunimodalBroad;
@@ -475,6 +474,7 @@ for mi = 1 : length(mice)
         ca.val = caValAll;
         
         spk.tuned = spktuned;
+        spk.anovaP = spkAnovaPAll;
         spk.tunedAngle = spktunedAngle;
         spk.tuneDirection = spktuneDirection;
         spk.unimodalSingle = spkunimodalSingle;
