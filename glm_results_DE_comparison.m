@@ -29,8 +29,17 @@ function results = glm_results_DE_comparison(mouse, session, baseDir)
 % basic setting
 repeat = 10;
 cd(sprintf('%s%03d',baseDir, mouse))
-wtvFnBase = sprintf('glmWhiskerTouchVariablesONLY_JK%03dS%02d_R', mouse, session);
-touchFnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+
+
+
+% wtvFnBase = sprintf('glmWhiskerTouchVariablesONLY_JK%03dS%02d_R', mouse, session);
+% touchFnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+wtvFnBase = sprintf('glmWhiskerTouchVariablesONLYlasso_JK%03dS%02d_R', mouse, session);
+touchFnBase = sprintf('glmResponseType_JK%03dS%02d_m44_R', mouse, session);
+
+
+
+
 tuningFn = sprintf('JK%03dS%02dangle_tuning',mouse,session);
 load(tuningFn)
 ufn = sprintf('UberJK%03dS%02d',mouse,session);
@@ -86,14 +95,18 @@ parfor ci = 1 : numCell
 
     finiteIndTest = intersect(find(isfinite(spkTemp)), find(isfinite(sum(testInput,2))));
     spkTest = spkTemp(finiteIndTest);
-
-    model = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,:)]*avgWCoeff);
-    mu = mean(spkTest); % null poisson parameter
-    nullLogLikelihood = sum(log(poisspdf(spkTest,mu)));
-    saturatedLogLikelihood = sum(log(poisspdf(spkTest,spkTest)));                    
-    fullLogLikelihood = sum(log(poisspdf(spkTest',model)));
     
-    tempWhiskerDE = (fullLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
+    if isempty(avgWCoeff)
+        tempWhiskerDE = NaN;
+    else
+        model = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,:)]*avgWCoeff);
+        mu = mean(spkTest); % null poisson parameter
+        nullLogLikelihood = sum(log(poisspdf(spkTest,mu)));
+        saturatedLogLikelihood = sum(log(poisspdf(spkTest,spkTest)));                    
+        fullLogLikelihood = sum(log(poisspdf(spkTest',model)));
+
+        tempWhiskerDE = (fullLogLikelihood - nullLogLikelihood)/(saturatedLogLikelihood - nullLogLikelihood);
+    end
     
     % then touch
     avgTCoeff = mean(cell2mat(touchCoeff(ci,:)),2);

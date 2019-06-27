@@ -17,8 +17,8 @@
 
 %% basic settings
 baseDir = 'D:\TPM\JK\suite2p\';
-mouse = 25;
-session = 4;
+mouse = 30;
+session = 3;
 repeat = 10;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
@@ -36,7 +36,7 @@ load(angletuningFn)
 %% Choose examples of sharp tuning
 %%
 %% settings
-plane = 8;
+plane = 5;
 
 % Image
 % figure, imshow(adapthisteq(mat2gray(u.mimg{plane})))

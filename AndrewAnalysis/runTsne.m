@@ -40,3 +40,8 @@ subplot(1,2,2);
 boxplot(distance(:), angleDistance(:))
 ylim([0, 1]);
 title(miceName{animalID})
+
+
+tempInds = triu(ones(size(distance,1)),1);
+tsneDist = distance(find(tempInds(:)));
+angleDist = angleDistance(find(tempInds(:)));

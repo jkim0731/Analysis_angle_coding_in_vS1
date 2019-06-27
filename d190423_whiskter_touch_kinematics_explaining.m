@@ -14,17 +14,17 @@
 
 %% 
 clear
-baseDir = 'C:\JK\';
+baseDir = 'D:\TPM\JK\suite2p\';
 cd(baseDir)
 fullModel = load('glm_cell_function_error_ratio_withWTV_shuffling', 'naive', 'expert');
-wtvModel = load('glm_cell_function_error_ratio_WTV_ONLY', 'naive', 'expert');
+wtvModel = load('glm_cell_function_error_ratio_WTV_ONLYlasso', 'naive', 'expert');
 touchModel = load('glm_results_responseType', 'naive', 'expert');
 angleInfo = load('angle_tuning_summary','naive','expert');
 
 colors = [jet(7); 0.7, 0.7, 0.7];
 
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3]}; 
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]}; 
 matchingInd = find(cellfun(@length, sessions)>1);
 nonlearnerInd = setdiff(1:length(mice), matchingInd);
 %% Diff between DE diff
@@ -515,9 +515,11 @@ bar(1:4, [mean(L23C2val(:,1)), mean(L23nonC2val(:,1)), mean(L4C2val(:,1)), nanme
 % from all touch cells pooled from all mice
 
 %% naive
-wkvInds = [2,5,7,8];
-range = 0:0.001:0.1;
+wkvInds = [2,5];
+range = 0:0.001:0.3;
 tunedAngles = [45:15:135, 0];
+
+naiveInds = [1:4,7,9];
 
 figure,
 for wi = 1 : length(wkvInds)
@@ -528,25 +530,25 @@ for wi = 1 : length(wkvInds)
     % for ai = 5
     %     angleGroupInds{ai} = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
     % dediffdist(ai,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(angleGroupInds{ai},2), range, 'normalization', 'cdf');
-        dediffdist{ai} = zeros(length(wtvModel.naive),length(range)-1);
-        for mi = 1 : length(wtvModel.naive)
+        dediffdist{ai} = zeros(length(naiveInds),length(range)-1);
+        for mi = 1 : length(naiveInds)            
     %     for mi = 3
             tempInds = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
-            tempVal = wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi));
+            tempVal = wtvModel.naive(naiveInds(mi)).whiskerVariableDEdiff(tempInds,wkvInds(wi));
             tempVal(tempVal>max(range)) = max(range)-mean(diff(range))/2;
             tempVal(tempVal<min(range)) = min(range);
 %             dediffdist{ai}(mi,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi)), range, 'normalization', 'cdf');
             dediffdist{ai}(mi,:) = histcounts(tempVal, range, 'normalization', 'cdf');
         end
     end
-    subplot(2,2,wi), hold on
+    subplot(1,2,wi), hold on
     for ai = 1 : length(tunedAngles)
         plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
     end
     a = range(2:end);
 
     for ai = 1 : length(tunedAngles)
-        boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)), 'cmap', colors(ai,:))
+        boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(naiveInds)), 'cmap', colors(ai,:))
     % boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)))
     end
     for ai = 1 : length(tunedAngles)
@@ -565,9 +567,10 @@ for wi = 1 : length(wkvInds)
     switch wi
         case 1
             title('\Delta\kappa_V')
+            xlim([0 0.2])
         case 2
             title('Slide distance')
-            xlim([0 0.05])
+            xlim([0 0.2])
         case 3
             title('|\Delta\kappa_V|')
             xlim([0 0.05])
@@ -578,7 +581,7 @@ for wi = 1 : length(wkvInds)
 end
 
 %% control: at touch variables
-wkvInds = [10,11,12,13];
+wkvInds = [11,12];
 figure,
 for wi = 1 : length(wkvInds)
     % angleGroupInds = cell(1,length(tunedAngles));
@@ -588,26 +591,26 @@ for wi = 1 : length(wkvInds)
     % for ai = 5
     %     angleGroupInds{ai} = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
     % dediffdist(ai,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(angleGroupInds{ai},2), range, 'normalization', 'cdf');
-        dediffdist{ai} = zeros(length(wtvModel.naive),length(range)-1);
-        for mi = 1 : length(wtvModel.naive)
+        dediffdist{ai} = zeros(length(naiveInds),length(range)-1);
+        for mi = 1 : length(naiveInds)
     %     for mi = 3
     
             tempInds = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
-            tempVal = wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi));
+            tempVal = wtvModel.naive(naiveInds(mi)).whiskerVariableDEdiff(tempInds,wkvInds(wi));
             tempVal(tempVal>max(range)) = max(range)-mean(diff(range))/2;
             tempVal(tempVal<min(range)) = min(range);
 %             dediffdist{ai}(mi,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi)), range, 'normalization', 'cdf');
             dediffdist{ai}(mi,:) = histcounts(tempVal, range, 'normalization', 'cdf');
         end
     end
-    subplot(2,2,wi), hold on
+    subplot(1,2,wi), hold on
     for ai = 1 : length(tunedAngles)
         plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
     end
     a = range(2:end);
 
     for ai = 1 : length(tunedAngles)
-        boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)), 'cmap', colors(ai,:))
+        boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(naiveInds)), 'cmap', colors(ai,:))
     % boundedline(a,  [mean(dediffdist{ai})], [std(dediffdist{ai})]/sqrt(length(wtvModel.naive)))
     end
     for ai = 1 : length(tunedAngles)
@@ -625,11 +628,13 @@ for wi = 1 : length(wkvInds)
     end
     switch wi
         case 1
-            title('\phi')
-            xlim([0 0.05])
+%             title('\phi')
+            title('Arc length')
+            xlim([0 0.2])
         case 2
-            title('\kappa_H')
-            xlim([0 0.05])
+%             title('\kappa_H')
+            title('Touch count')
+            xlim([0 0.2])
         case 3
             title('\kappa_V')
             xlim([0 0.05])

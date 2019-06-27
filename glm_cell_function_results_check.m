@@ -23,29 +23,29 @@
 %%
 clear
 tic
-baseDir = 'C:\JK\';
+baseDir = 'D:\TPM\JK\suite2p\';
 
-% mice = [25,27,30,36,37,38,39,41,52,53,54,56];
-% sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3]}; 
+mice = [25,27,30,36,37,38,39,41,52,53,54,56];
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3]}; 
 
-% naiveInd = 1:length(mice);
-% expertInd = find(cellfun(@length, sessions)==2);
+naiveInd = 1:length(mice);
+expertInd = find(cellfun(@length, sessions)==2);
 
 
-% for ni = 1 : length(naiveInd)
-%     mouse = mice(naiveInd(ni));
-%     cd(sprintf('%s%03d',baseDir,mouse))
-%     session = sessions{naiveInd(ni)}(1);    
-%     naive(ni) = glm_results_cell_function(mouse, session, baseDir);
-% end
+for ni = 1 : length(naiveInd)
+    mouse = mice(naiveInd(ni));
+    cd(sprintf('%s%03d',baseDir,mouse))
+    session = sessions{naiveInd(ni)}(1);    
+    naive(ni) = glm_results_cell_function(mouse, session, baseDir);
+end
 
-% expert = struct;
-% for ei = 1 : length(expertInd)
-%     mouse = mice(expertInd(ei));
-%     cd(sprintf('%s%03d',baseDir,mouse))
-%     session = sessions{expertInd(ei)}(2);    
-%     expert(ei) = glm_results_cell_function(mouse, session, baseDir);
-% end
+expert = struct;
+for ei = 1 : length(expertInd)
+    mouse = mice(expertInd(ei));
+    cd(sprintf('%s%03d',baseDir,mouse))
+    session = sessions{expertInd(ei)}(2);    
+    expert(ei) = glm_results_cell_function(mouse, session, baseDir);
+end
 % 
 % % L4mice = [70,74,75,76];
 % % L4sessions = [6,4,4,4];
@@ -60,12 +60,30 @@ baseDir = 'C:\JK\';
 %     L4(mi) = glm_results_cell_function(mouse, session, baseDir);
 % end
 
-save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010.mat', 'naive', 'expert', 'L4')
+save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010_JK027_S10.mat', 'naive', 'expert','L4')
 toc
 
 
+%% changing one of glm results
+
+baseDir = 'D:\TPM\JK\suite2p\';
+
+load([baseDir, 'cellFunctionRidgeDE010'], 'naive', 'expert')
+expert(2) = glm_results_cell_function(27,10,baseDir);
+save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010_JK027_S10.mat', 'naive', 'expert')
+
+expert(2) = glm_results_cell_function(27,9,baseDir);
+save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010_JK027_S09.mat', 'naive', 'expert')
 
 
+%% Scnn1a mice
+
+baseDir = 'D:\TPM\JK\suite2p\';
+L4 = struct;
+L4(1) = glm_results_cell_function(75,4,baseDir);
+L4(2) = glm_results_cell_function(76,4,baseDir);
+
+save([baseDir, 'Scnn1a_ridgeDE010'], 'L4')
 
 %% Comparing between glm methods
 

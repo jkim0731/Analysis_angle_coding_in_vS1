@@ -18,17 +18,17 @@
 
 % 2019/04/08 JK
 
+% Updates:
+% 2019/06/25 - Only pre-decision periods. addition of frames were just 1,
+% instead of 2. Just compensating for a possible spike detection frame
+% error (at most single is assumed). Consider touch chunks "by whisking".
+
 % settings
 clear
 baseDir = 'D:\TPM\JK\suite2p\';
-mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
+mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 % sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
-sessions = {[4,19],[3,9],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
-% naiveMi = 1:12;
-% expertMi = [1,2,3,4,7,9];
-% L4Mi = 13:16;
-% mice = 27;
-% sessions = {[10]};
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
 
@@ -43,9 +43,9 @@ numResampling = 10000; % permutation test
 % Load ridge results file
 % It should be at the base directory
 cd(baseDir)
-load('cellFunctionRidgeDE010_JK027_S09.mat')
+load('cellFunctionRidgeDE010_JK027_S10.mat')
 
-% for mi = 1 : length(mice)    
+% for mi = 2 : length(mice)    
 for mi = 2
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
@@ -59,12 +59,21 @@ for mi = 2
         load(ufn)
         
         % still some settings
-        savefn = [u.mouseName,u.sessionName,'angle_tuning.mat']; %
+        savefn = [u.mouseName,u.sessionName,'angle_tuning_predecision.mat']; %
 
         % making templates
-        % find touch trials 
-        touchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunks), u.trials));
-        touchTrialNum = cellfun(@(x) x.trialNum, u.trials(touchTrialInd));
+        % find predecision touch trials
+        decisionTime = cell(length(u.trials),1);
+        for di = 1 : length(decisionTime)
+            if isempty(u.trials{di}.answerLickTime)
+                decisionTime{di} = u.trials{di}.poleDownOnsetTime;
+            else
+                decisionTime{di} = u.trials{di}.answerLickTime;
+            end
+        end
+        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
+        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), decisionTime(tempTouchTrialInd)));
+        touchTrialInd = tempTouchTrialInd(pdTouchInd);
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
         planeTrialsNum = cell(numPlane,1);
@@ -84,12 +93,22 @@ for mi = 2
             nonTouchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
             for ti = 1 : length(planeTrialsInd{pi})
                 tempTrial = u.trials{planeTrialsInd{pi}(ti)};
-                tempFrames = cell(1, length(tempTrial.protractionTouchChunks));
-                for ptci = 1 : length(tempFrames)
-                    tempFrames{ptci} = [0:2] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
+                
+                if isempty(tempTrial.answerLickTime)
+                    tempDecisionTime = tempTrial.poleDownOnsetTime;
+                else
+                    tempDecisionTime = tempTrial.answerLickTime;
                 end
-                tempTouchFrames = unique(cell2mat(tempFrames));
-                touchFrames{pi}{ti} = tempTouchFrames(tempTouchFrames <= length(tempTrial.tpmTime{tempInd}));
+                preDecisionInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempDecisionTime, tempTrial.protractionTouchChunksByWhisking));
+                
+                tempFrames = cell(1, length(preDecisionInd));
+                
+                for ptci = 1 : length(tempFrames)
+                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
+                end
+                touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
+%                 tempTouchFrames = unique(cell2mat(tempFrames));
+%                 touchFrames{pi}{ti} = tempTouchFrames(tempTouchFrames <= length(tempTrial.tpmTime{tempInd})); % sometimes touch can happen after tpm imaging is done with that trial
                 nonTouchFrames{pi}{ti} = setdiff(poleUpFrames{pi}{ti}, touchFrames{pi}{ti});
             end
             angleTrialInds{pi} = cell(length(angles),1); % index of planeTrialsInd{pi}
@@ -102,19 +121,13 @@ for mi = 2
         if si == 2
             glmi = find(expertMi == mi);
             glm = expert(glmi);
-%         elseif mi < L4Mi(1)
-%             glm = naive(mi);
-%         else
-%             glm = L4(find(L4Mi == mi));
         else
             glm = naive(mi);
         end        
-        touchID = glm.touchID;        
+        touchID = glm.touchID;
         if size(touchID,1) < size(touchID,2)
             touchID = touchID';
         end
-        
-        uIndTouchID = find(ismember(u.cellNums, touchID));
         
         ca.touchID = touchID;
         catuned = zeros(length(touchID),1);
@@ -147,14 +160,18 @@ for mi = 2
         spkmodulation = zeros(length(touchID),1);
         spksharpness = zeros(length(touchID),1);
         spkNTamplitude = zeros(length(touchID),1); % for not-tuned cells
-        spkNTdirection = zeros(length(touchID),1); % for not-tuned cells        
+        spkNTdirection = zeros(length(touchID),1); % for not-tuned cells
         spkValAll = cell(length(touchID),1);
         
         parfor ci = 1:length(touchID)
 %         for ci = 195
             fprintf('Processing JK%03d S%02d touch cell %d / %d\n', mouse, session, ci, length(touchID))
             cellNum = touchID(ci);
-            plane = floor(cellNum/1000);
+%             if mouse == 27 && (session == 9 || session == 10)
+%                 plane = floor(cellNum/1000) - 4;
+%             else
+                plane = floor(cellNum/1000);
+%             end
             trialInds = planeTrialsInd{plane};
             calciumPoleUpFrames = poleUpFrames{plane};
             spkTouchFrames = touchFrames{plane};

@@ -31,7 +31,7 @@ baseDir = 'D:\TPM\JK\suite2p\';
 % L4Mi = 13:16;
 
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+sessions = {[4,19],[3,9,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
 
@@ -52,8 +52,8 @@ for mi = 1 : length(mice)
 % for mi = 1
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-    for si = 1 : length(sessions{mi})
-%     for si = 1
+%     for si = 1 : length(sessions{mi})
+    for si = 2 : length(sessions{mi})
 
         session = sessions{mi}(si);
         
