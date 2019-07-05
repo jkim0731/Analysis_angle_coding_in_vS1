@@ -42,7 +42,7 @@ for mi = 1 : length(mice)
 end
 plot(0:35, ones(36,1)*75, 'r--', 'linewidth', 3)
 xlabel('Sessions'), ylabel('% Correct')
-set(gca,'fontsize',25, 'linewidth', 5, 'fontweight', 'bold')
+set(gca,'fontsize',25)
 
 
 %%
@@ -101,7 +101,7 @@ xticks([1:5]), xlim([0.5 5.5]), ylabel('% Correct')
 labels = ({'Before Learning', 'Expert', 'After Learning','Radial Distractor', 'No Whisker'});
 labels = cellfun(@(x) strrep(x,' ','\newline'), labels,'UniformOutput',false);
 XTickLabel = labels;
-set(gca,'fontsize',20, 'fontweight', 'bold', 'linewidth', 5, 'xticklabel', labels)
+set(gca,'fontsize',20, 'xticklabel', labels)
 %% 
 angles = 45:15:135;
 learned = [25,27,30,36,39,52];
@@ -149,7 +149,7 @@ for mi = 1 : length(learned)
 end
 errorbar(angles, mean(plickLBefore),sqrt(std(plickLBefore)), 'r-', 'linewidth', 5)
 ylabel('Left lick percentage (%)'), xlabel('Angle (\circ)'), xticks(angles), title('Before learning'), ylim([0 100])
-set(gca,'fontsize',15, 'fontweight', 'bold', 'linewidth', 5)
+set(gca,'fontsize',15)
 
 subplot(122), hold on
 for mi = 1 : length(learned)    
@@ -157,7 +157,7 @@ for mi = 1 : length(learned)
 end
 errorbar(angles, mean(plickLAfter),sqrt(std(plickLAfter)), 'r-', 'linewidth', 5)
 ylabel('Left lick percentage (%)'), xlabel('Angle (\circ)'), xticks(angles), title('After learning'), ylim([0 100])
-set(gca,'fontsize',15, 'fontweight', 'bold', 'linewidth', 5)
+set(gca,'fontsize',15)
 
 %%
 figure, plot(angles, plickLBefore(5,:))
