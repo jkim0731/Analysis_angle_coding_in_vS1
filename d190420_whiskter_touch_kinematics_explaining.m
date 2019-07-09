@@ -8,7 +8,7 @@
 
 %% first, look at difference in DE diff in each one
 clear
-baseDir = 'C:\JK\';
+baseDir = 'D:\TPM\JK\suite2p\';
 cd(baseDir)
 fullModel = load('glm_cell_function_error_ratio_withWTV_shuffling', 'naive', 'expert');
 wtvModel = load('glm_cell_function_error_ratio_WTV_ONLY', 'naive', 'expert');
@@ -370,7 +370,7 @@ title('Naive without WTV similar to full model')
 % plot each partial DE diff value to each std (one plot for touch another
 % for WTV)
 % clear
-baseDir = 'C:\JK\';
+baseDir = 'D:\TPM\JK\suite2p\';
 cd(baseDir)
 load('glm_cell_function_error_ratio_withWTV_shuffling', 'naive', 'expert');
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];

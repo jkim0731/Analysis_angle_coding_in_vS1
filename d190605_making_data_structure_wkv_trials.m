@@ -489,3 +489,109 @@ for vi = 1 : 5
             ylabel('Number')
     end
 end
+
+
+
+%% Try looking into whisker kinematics changes deeper
+%% Trying just "during touch" features"
+% All touch features: dKappaV, dKappaH, dPhi, dTheta, touch duration, 
+% slide distance. In different angles. Compare between before and after.
+% From pre-decision kinematics only
+
+mice = [25,27,30,36,39,52];
+sessions = {[4,19],[3,10],[3,21],[1,17],[1,23],[3,21]};
+
+angles = 45:15:135;
+naiveDist = zeros(length(mice), length(angles), 6); % 6 variables
+expertDist = zeros(length(mice), length(angles), 6);
+for mi = 1 : length(mice)
+% for mi = 1
+    mouse = mice(mi);
+    for si = 1 : length(sessions{mi})
+%     for si = 1    
+        session = sessions{mi}(si);
+
+        mouseName = sprintf('JK%03d',mouse);
+        sessionName = sprintf('S%02d',session);
+        angles = 45:15:135;
+
+        %% Load necessary files
+        uberFolder = 'Y:\Whiskernas\JK\suite2p\';
+        ufn = sprintf('UberJK%03dS%02d',mouse, session);
+        load([uberFolder, sprintf('%03d',mouse), filesep, ufn])
+
+        %%
+    
+        touchTrialInds = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
+        answerLickTimeCell = cellfun(@(x) x.answerLickTime, u.trials(touchTrialInds), 'uniformoutput', false);
+        for altci = 1 : length(answerLickTimeCell)
+            if isempty(answerLickTimeCell{altci})
+                answerLickTimeCell{altci} = u.trials{touchTrialInds(altci)}.poleDownOnsetTime;
+            end
+        end
+        
+        preDecisionTTI = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y , u.trials(touchTrialInds), answerLickTimeCell));
+        preDecisionTouchNum = cellfun(@(x,y) length(cellfun(@(z) find(x.whiskerTime(z(1))<y), x.protractionTouchChunksByWhisking, 'uniformoutput', false)), ...
+            u.trials(touchTrialInds(preDecisionTTI)), answerLickTimeCell(preDecisionTTI), 'uniformoutput', false);
+        
+        tempData = nan(length(preDecisionTTI),7); % dKappaV, dKappaH, dPhi, slide distance, touch count, and angles
+        
+        tempData(:,1) = cellfun(@(x,y) mean(x.protractionTouchDThetaByWhisking(1:y)), u.trials(touchTrialInds(preDecisionTTI)), preDecisionTouchNum); 
+        tempData(:,2) = cellfun(@(x,y) mean(x.protractionTouchDPhiByWhisking(1:y)), u.trials(touchTrialInds(preDecisionTTI)), preDecisionTouchNum); 
+        tempData(:,3) = cellfun(@(x,y) mean(x.protractionTouchDKappaHByWhisking(1:y)), u.trials(touchTrialInds(preDecisionTTI)), preDecisionTouchNum);
+        tempData(:,4) = cellfun(@(x,y) mean(x.protractionTouchDKappaVByWhisking(1:y)), u.trials(touchTrialInds(preDecisionTTI)), preDecisionTouchNum);
+        tempData(:,5) = cellfun(@(x,y) mean(x.protractionTouchDurationByWhisking(1:y)), u.trials(touchTrialInds(preDecisionTTI)), preDecisionTouchNum);
+        tempData(:,6) = cellfun(@(x,y) mean(x.protractionTouchSlideDistanceByWhisking(1:y)), u.trials(touchTrialInds(preDecisionTTI)), preDecisionTouchNum);
+        tempData(:,7) = cellfun(@(x,y) x.angle, u.trials(touchTrialInds(preDecisionTTI)));
+        
+        % remove rows with Nans
+        rmInds = find(isnan(sum(tempData,2)));
+        tempData(rmInds,:) = [];
+        
+        for ai = 1 : length(angles)
+            tempInd = find(tempData(:,7) == angles(ai));
+            for vi = 1 : 6
+                if si == 1
+                    naiveDist(mi,ai,vi) = mean(tempData(tempInd,vi));
+                else
+                    expertDist(mi,ai,vi) = mean(tempData(tempInd,vi));
+                end
+            end
+        end
+    end
+end
+%
+figure,
+for vi = 1 : 6
+    subplot(2,3,vi), hold on
+    tempNaive = squeeze(naiveDist(:,:,vi));
+    shadedErrorBar(angles, mean(tempNaive), std(tempNaive)/sqrt(length(mice)), 'lineprops', 'b')
+    tempExpert = squeeze(expertDist(:,:,vi));
+    shadedErrorBar(angles, mean(tempExpert), std(tempExpert)/sqrt(length(mice)), 'lineprops', 'r')
+    xticks(angles)
+    xlim([angles(1), angles(end)])
+    switch vi
+        case 1
+            title('Max \Delta\theta')
+            ylabel('(\circ)')
+        case 2
+            title('Max \Delta\phi')
+            ylabel('(\circ)')
+            xlabel('Object angles (\circ)')
+        case 3
+            title('Max \Delta\kappa_H')
+            ylabel('(mm^-2)')
+        case 4
+            title('Max \Delta\kappa_V')
+            ylabel('(mm^-2)')        
+        case 5
+            title('Touch Duration')
+            xlabel('Object angles (\circ)')
+            ylabel('Seconds')            
+        case 6
+            title('Max slide distance')
+            xlabel('Object angles (\circ)')
+            ylabel('(mm)')
+            legend({'Naive', 'Expert'}, 'location', 'northeast', 'box', 'off')
+    end
+end

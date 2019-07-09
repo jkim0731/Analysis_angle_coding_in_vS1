@@ -60,7 +60,7 @@ L4depth = 350; % include 350 um as L4 (350 is the starting point)
 
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m44_R', mouse, session);
 % cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
 % spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 
@@ -91,6 +91,7 @@ deFitInd = find(averageDE >= deThreshold);
 %% assigning functions to each cell
 cellFunction = cell(length(deFitInd), 1);
 parfor ci = 1 : length(deFitInd)
+% for ci = 620
     cID = u.cellNums(deFitInd(ci));
     tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
     cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);
@@ -100,7 +101,7 @@ parfor ci = 1 : length(deFitInd)
     spkTest = cell2mat(cellfun(@(x) [nan(1,posShift), x.spk(cindSpk,:), nan(1,posShift)], u.trials(tindCell)','uniformoutput',false));
     
     if length(testInput) ~= length(spkTest)
-        error('input matrix and spike length mismatch')
+        error(sprintf('input matrix and spike length mismatch in ci %d', ci))
     end
 
     finiteIndTest = intersect(find(isfinite(spkTest)), find(isfinite(sum(testInput,2))));

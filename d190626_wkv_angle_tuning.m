@@ -28,12 +28,12 @@ thresholdPermutation = 0.05;
 
 % naiveModelTune = struct;
 % expertModelTune = struct;
-for mi = 1 : length(mice)
-% for mi = 2
+% for mi = 1 : length(mice)
+for mi = 5
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-    for si = 1 : length(sessions{mi})
-%     for si = 1
+%     for si = 1 : length(sessions{mi})
+    for si = 1
         session = sessions{mi}(si);        
         savefn = sprintf('angle_tuning_model_JK%03dS%02d', mouse, session);
         
@@ -138,17 +138,17 @@ for mi = 1 : length(mice)
 %         (3) full model with wkv
 %         (4) from wkv, remove dKv (remove 5:7)
 %         (5) from wkv, remove slide distance (remove 14:16)
-%         (6) from wkv, remove touch num (remove 35:37)
+%         (6) from wkv, remove touch count (remove 35:37)
 %         (7) from wkv, remove arc length (remove 32:34)
 %         (8) from wkv, remove dKh (remove 2:4)
 %         (9) from wkv, remove dPhi (remove 11:13)
 %         (10) from wkv, remove dKv + slide distance (remove [5:7, 14:16])
-%         (11) from wkv, remove touch num + arc length (remove 32:37)
+%         (11) from wkv, remove touch count + arc length (remove 32:37)
 %         (12) from wkv, remove dKh + dPhi (remove [2:4, 11:13])
 %         (13) from wkv, use only dKv (use [1, 5:7])
 %         (14) from wkv, use only slide distance (use [1, 14:16])
 %         (15) from wkv, use only dKv + slide distance (use [1, 5:7, 14:16])
-%         (16) from wkv, use only touch num + arc length (use [1, 32:37])
+%         (16) from wkv, use only touch count + arc length (use [1, 32:37])
 %         (17) from wkv, use only dKh + dPhi (use [1:4, 11:13])
 %         
         

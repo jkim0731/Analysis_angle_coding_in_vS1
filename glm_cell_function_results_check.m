@@ -21,7 +21,7 @@
 
 
 %%
-clear
+% clear
 tic
 baseDir = 'D:\TPM\JK\suite2p\';
 
@@ -32,15 +32,15 @@ naiveInd = 1:length(mice);
 expertInd = find(cellfun(@length, sessions)==2);
 
 
-for ni = 1 : length(naiveInd)
-    mouse = mice(naiveInd(ni));
-    cd(sprintf('%s%03d',baseDir,mouse))
-    session = sessions{naiveInd(ni)}(1);    
-    naive(ni) = glm_results_cell_function(mouse, session, baseDir);
-end
+% for ni = 1 : length(naiveInd)
+%     mouse = mice(naiveInd(ni));
+%     cd(sprintf('%s%03d',baseDir,mouse))
+%     session = sessions{naiveInd(ni)}(1);    
+%     naive(ni) = glm_results_cell_function(mouse, session, baseDir);
+% end
 
-expert = struct;
-for ei = 1 : length(expertInd)
+%%
+for ei = 2 : length(expertInd)
     mouse = mice(expertInd(ei));
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{expertInd(ei)}(2);    
@@ -60,7 +60,7 @@ end
 %     L4(mi) = glm_results_cell_function(mouse, session, baseDir);
 % end
 
-save('Y:\Whiskernas\JK\suite2p\cellFunctionRidgeDE010_JK027_S10.mat', 'naive', 'expert','L4')
+save('Y:\Whiskernas\JK\suite2p\cellFunctionLassoDE010_JK027_S10.mat', 'naive', 'expert')
 toc
 
 

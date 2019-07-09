@@ -161,6 +161,33 @@ xticklabels({'max\Delta\kappa_H', 'max\Delta\kappa_V', 'max\Delta\theta', 'max\D
 xtickangle(45)
 set(gca, 'box', 'off')
 
+%% all naive and all expert, only "during touch" features
+cd(baseDir)
+wkvModel = load('glm_cell_function_error_ratio_WTV_ONLYlasso', 'naive', 'expert');
+
+wkvNaive = zeros(12,6);
+wkvExpert = zeros(6,6);
+for i = 1 : 12
+    wkvNaive(i,:) = mean(wkvModel.naive(i).whiskerVariableDEdiff(:,1:6));    
+end
+for i = 1 : 6
+    wkvExpert(i,:) = mean(wkvModel.expert(i).whiskerVariableDEdiff(:,1:6));    
+end
+figure, 
+bar([3,1,4,6,2,5]-0.1, mean(wkvNaive), 0.2, 'b'), hold on
+bar([3,1,4,6,2,5]+0.1, mean(wkvExpert), 0.2, 'r'), hold on
+errorbar([3,1,4,6,2,5]-0.1, mean(wkvNaive), std(wkvNaive)/sqrt(12), 'b.')
+errorbar([3,1,4,6,2,5]+0.1, mean(wkvExpert), std(wkvExpert)/sqrt(6), 'r.')
+
+
+xticks([1:6])
+xticklabels({ 'max \Delta\kappa_V',  'Slide distance', 'max \Delta\kappa_H', 'Touch duration','max \Delta\theta', 'max \Delta\phi'})
+xtickangle(45)
+ylabel('Difference in deviance explained')
+xtickangle(45)
+set(gca, 'box', 'off')
+
+legend({'Naive', 'Expert'})
 %% Correlation between each wtv and angles
 wtvAngleCorr = zeros(12,13);
 for mi = 1:12
@@ -515,12 +542,13 @@ bar(1:4, [mean(L23C2val(:,1)), mean(L23nonC2val(:,1)), mean(L4C2val(:,1)), nanme
 % from all touch cells pooled from all mice
 
 %% naive
-wkvInds = [2,5];
+wkvInds = [1:6];
 range = 0:0.001:0.3;
 tunedAngles = [45:15:135, 0];
 
+subplotInd = [3,1,4,6,2,5];
 naiveInds = [1:4,7,9];
-
+% naiveInds = [1:12];
 figure,
 for wi = 1 : length(wkvInds)
     % angleGroupInds = cell(1,length(tunedAngles));
@@ -534,14 +562,14 @@ for wi = 1 : length(wkvInds)
         for mi = 1 : length(naiveInds)            
     %     for mi = 3
             tempInds = find(angleInfo.naive(mi).tunedAngle == tunedAngles(ai));
-            tempVal = wtvModel.naive(naiveInds(mi)).whiskerVariableDEdiff(tempInds,wkvInds(wi));
+            tempVal = wkvModel.naive(naiveInds(mi)).whiskerVariableDEdiff(tempInds,wkvInds(wi));
             tempVal(tempVal>max(range)) = max(range)-mean(diff(range))/2;
             tempVal(tempVal<min(range)) = min(range);
 %             dediffdist{ai}(mi,:) = histcounts(wtvModel.naive(mi).whiskerVariableDEdiff(tempInds,wkvInds(wi)), range, 'normalization', 'cdf');
             dediffdist{ai}(mi,:) = histcounts(tempVal, range, 'normalization', 'cdf');
         end
     end
-    subplot(1,2,wi), hold on
+    subplot(2,3,subplotInd(wi)), hold on
     for ai = 1 : length(tunedAngles)
         plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
     end
@@ -554,29 +582,36 @@ for wi = 1 : length(wkvInds)
     for ai = 1 : length(tunedAngles)
         plot(range(2:end), mean(dediffdist{ai}), 'color', colors(ai,:))
     end
-    if wi == 1
+    if subplotInd(wi) == 6
         legend({'45\circ','60\circ','75\circ','90\circ','105\circ','120\circ','135\circ','None'})
     end
     ylim([0 1])
-    if wi == 3 || wi == 4
+    if subplotInd(wi) >3
         xlabel('DE diff')
     end
-    if wi == 1 || wi == 3
+    if subplotInd(wi) == 1 || subplotInd(wi) == 4
         ylabel('Cumulative proportion')
     end
-    switch wi
+    switch subplotInd(wi)
         case 1
             title('\Delta\kappa_V')
-            xlim([0 0.2])
+            xlim([0 0.15])
         case 2
             title('Slide distance')
-            xlim([0 0.2])
+            xlim([0 0.25])
         case 3
-            title('|\Delta\kappa_V|')
-            xlim([0 0.05])
+            title('\Delta\kappa_H')
+            xlim([0 0.2])
         case 4
-            title('|\Delta\phi|')
-            xlim([0 0.03])
+            title('Touch duration')
+            xlim([0 0.1])
+        case 5
+            title('\Delta\theta')
+            xlim([0 0.05])
+        case 6
+            title('\Delta\phi')
+            xlim([0 0.05])
+            
     end
 end
 
