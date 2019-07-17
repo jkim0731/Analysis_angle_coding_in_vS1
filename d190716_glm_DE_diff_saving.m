@@ -42,7 +42,7 @@ end
 
 % save('Y:\Whiskernas\JK\suite2p\glm_results_responseType.mat', 'naive', 'expert', 'L4')
 save('Y:\Whiskernas\JK\suite2p\glm_results_responseType.mat', 'naive', 'expert')
-toc
+toc % takes about 8 min in 36 core 
 %%
 % clear
 % tic
@@ -91,4 +91,4 @@ toc
 % 
 % % save('Y:\Whiskernas\JK\suite2p\glm_results_withWTV_expert.mat', 'naive', 'expert', 'L4')
 % save('Y:\Whiskernas\JK\suite2p\glm_results_WKV.mat', 'naive', 'expert')
-% toc
+% toc % takes about 8 min in 36 core
