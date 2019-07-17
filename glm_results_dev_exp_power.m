@@ -39,7 +39,7 @@ devExp = struct;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
 % glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_R', mouse, session);
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
@@ -69,7 +69,7 @@ end
 allDE = zeros(numCells,1);
 partialDEsub = cell(numCells,1);
 corrVal = zeros(numCells,1); 
-parfor ci = 1 : numCells    
+parfor ci = 1 : numCells
     cID = cIDAll(ci);
     tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
     cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);

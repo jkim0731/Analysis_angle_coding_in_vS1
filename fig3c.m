@@ -1,7 +1,7 @@
 % for fig3c. Composition of touch cells and whisking cells. and mixed.
 %     in L2/3 C2, L2/3 non-C2, L4 C2, and L4 non-C2. Pie graph
 
-load('cellFunctionRidgeDE010')
+load('cellFunctionLassoDE010')
 %% all naive
 touches = zeros(length(naive), 4); % 1: L2/3 C2, 2: L2/3 non-C2, 3: L4 C2, 4: L4 non-C2
 whiskings = zeros(length(naive), 4); 
@@ -70,7 +70,7 @@ xticks([1:4])
 xticklabels({'L2/3 C2', 'L2/3 non-C2', 'L4 C2', 'L4 non-C2'})
 xtickangle(45)
 ylabel('Proportion')
-set(gca, 'linewidth', 2, 'fontweight', 'bold', 'fontsize', 10)
+set(gca, 'fontsize', 14)
 
 %% expert
     
@@ -141,7 +141,7 @@ xticks([1:4])
 xticklabels({'L2/3 C2', 'L2/3 non-C2', 'L4 C2', 'L4 non-C2'})
 xtickangle(45)
 ylabel('Proportion')
-set(gca, 'linewidth', 2, 'fontweight', 'bold', 'fontsize', 10)
+set(gca,'fontsize', 14)
 
 
 %% from Scnn1a

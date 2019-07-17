@@ -43,15 +43,14 @@ numResampling = 10000; % permutation test
 % Load ridge results file
 % It should be at the base directory
 cd(baseDir)
-load('cellFunctionRidgeDE010_JK027_S10.mat')
+load('cellFunctionLassoDE010.mat')
 
-% for mi = 2 : length(mice)    
-for mi = 2
+for mi = 1 : length(mice)    
+% for mi = 2
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-%     for si = 1 : length(sessions{mi})
-    for si = 2
-
+    for si = 1 : length(sessions{mi})
+%     for si = 2
         session = sessions{mi}(si);
         
         % load uber
@@ -59,7 +58,7 @@ for mi = 2
         load(ufn)
         
         % still some settings
-        savefn = [u.mouseName,u.sessionName,'angle_tuning_predecision.mat']; %
+        savefn = [u.mouseName,u.sessionName,'angle_tuning_lasso_predecision.mat']; %
 
         % making templates
         % find predecision touch trials
@@ -71,8 +70,8 @@ for mi = 2
                 decisionTime{di} = u.trials{di}.answerLickTime;
             end
         end
-        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
-        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), decisionTime(tempTouchTrialInd)));
+        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunks), u.trials));
+        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunks{1}(1)) < y, u.trials(tempTouchTrialInd), decisionTime(tempTouchTrialInd)));
         touchTrialInd = tempTouchTrialInd(pdTouchInd);
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
@@ -99,12 +98,12 @@ for mi = 2
                 else
                     tempDecisionTime = tempTrial.answerLickTime;
                 end
-                preDecisionInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempDecisionTime, tempTrial.protractionTouchChunksByWhisking));
+                preDecisionInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempDecisionTime, tempTrial.protractionTouchChunks));
                 
                 tempFrames = cell(1, length(preDecisionInd));
                 
                 for ptci = 1 : length(tempFrames)
-                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
+                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
                 end
                 touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
 %                 tempTouchFrames = unique(cell2mat(tempFrames));

@@ -60,7 +60,7 @@ L4depth = 350; % include 350 um as L4 (350 is the starting point)
 
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m44_R', mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_R', mouse, session);
 % cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
 % spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 
