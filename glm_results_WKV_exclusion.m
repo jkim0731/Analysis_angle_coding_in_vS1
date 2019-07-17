@@ -74,7 +74,7 @@ whiskerVariableDEdiff = zeros(numCells,wkvNumVar);
 
 parfor ci = 1 : numCells
     if ~isempty(averageCoeff{ci})
-        fprintf('Processing %d/%d\n', ci, numCells)
+        fprintf('Processing JK%03d S%02d: %d/%d\n', mouse, session, ci, numCells)
         cID = cIDAll(ci);
         tindCell = find(cellfun(@(x) ismember(cID, x.neuindSession), u.trials));
         cindSpk = find(u.trials{tindCell(1)}.neuindSession == cID);
@@ -128,7 +128,7 @@ parfor ci = 1 : numCells
             end
         end
         whiskerVariableDEdiff(ci,:) = tempWKVDEdiff;
-        whiskerVariableExclusionER(ci,:) = tempWTVexclusionER;
+        whiskerVariableExclusionER(ci,:) = tempWKVexclusionER;
         deviance(ci) = tempDeviance;
         devExp(ci) = devExplained;
         DEdiff{ci} = tempPartialDEsub;
