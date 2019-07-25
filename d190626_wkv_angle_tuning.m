@@ -10,14 +10,14 @@
 % Combination of variables to remove: dKv + slide distance (test). Touch num + arc length (control). dKh + dPhi
 % List of variables to include: dKv, slide distance, dKv + slide distance, touch num + arc length, dKh + dPhi
 
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 % sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
-% sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
-sessions = {[],[3,10],[3,21],[1,17],[7],[],[1,23],[],[],[],[],[]};
-sessions = {[],[3],[],[1],[7],[],[],[],[],[],[],[]};
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+% sessions = {[],[3,10],[3,21],[1,17],[7],[],[1,23],[],[],[],[],[]};
+% sessions = {[],[3],[],[1],[7],[],[],[],[],[],[],[]};
 cd(baseDir)
-load('cellFunctionRidgeDE010_JK027_S10.mat')
+load('cellFunctionLassoDE010.mat')
 
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
@@ -28,27 +28,27 @@ thresholdPermutation = 0.05;
 
 % naiveModelTune = struct;
 % expertModelTune = struct;
-% for mi = 1 : length(mice)
-for mi = 5
+for mi = 1 : length(mice)
+% for mi = 5
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-%     for si = 1 : length(sessions{mi})
-    for si = 1
+    for si = 1 : length(sessions{mi})
+%     for si = 1
         session = sessions{mi}(si);        
-        savefn = sprintf('angle_tuning_model_JK%03dS%02d', mouse, session);
+        savefn = sprintf('angle_tuning_model_lasso_NC_JK%03dS%02d', mouse, session);
         
         % load uber
-        ufn = sprintf('UberJK%03dS%02d',mouse, session);
+        ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
         load(ufn)
         
         % load wkv glm results and get coefficients (for all touch cells)
-        glmfn = sprintf('glmWhiskerTouchVariablesONLYlasso_JK%03dS%02d_R10',mouse, session); % these are only from touch response cells
+        glmfn = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R10',mouse, session); % these are only from touch response cells
         load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors')
         ap1 = allPredictors;
         cIDAllWKV = cIDAll;        
         coeffs = zeros(length(fitCoeffs),length(fitCoeffs{1}),10);
         for gi = 1 : 10
-            glmfn = sprintf('glmWhiskerTouchVariablesONLYlasso_JK%03dS%02d_R%02d',mouse, session, gi); % these are only from touch response cells
+            glmfn = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R%02d',mouse, session, gi); % these are only from touch response cells
             load(glmfn, 'fitCoeffs')
             emptyCoeffsInd = find(cellfun(@isempty, fitCoeffs));
             firstNonemptyInd = find(1-cellfun(@isempty, fitCoeffs),1,'first');
@@ -77,13 +77,13 @@ for mi = 5
 %         end
         
         % load touch glm results and get coefficients (for all active cells)
-        glmfn = sprintf('glmResponseType_JK%03dS%02d_m44_R10',mouse, session); % these are only from all active cells
+        glmfn = sprintf('glmResponseType_JK%03dS%02d_lasso_R10',mouse, session); % these are only from all active cells
         load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors')
         ap2 = allPredictors;
         cIDAllTouch = cIDAll;
         coeffs = zeros(length(fitCoeffs),length(fitCoeffs{1}),10);
         for gi = 1 : 10
-            glmfn = sprintf('glmResponseType_JK%03dS%02d_m44_R%02d',mouse, session, gi); % these are only from touch response cells
+            glmfn = sprintf('glmResponseType_JK%03dS%02d_lasso_R%02d',mouse, session, gi); % these are only from touch response cells
             load(glmfn, 'fitCoeffs')
             emptyCoeffsInd = find(cellfun(@isempty, fitCoeffs));
             firstNonemptyInd = find(1-cellfun(@isempty, fitCoeffs),1,'first');

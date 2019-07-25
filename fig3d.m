@@ -139,7 +139,7 @@ save('angle_tuning_summary_JK027_S09.mat','naive','expert')
 %% from predecision touches
 
 clear
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]}; 
 
@@ -150,8 +150,8 @@ for ni = 1 : length(naiveInds)
     mouse = mice(naiveInds(ni));
     cd(sprintf('%s%03d',baseDir, mouse))
     session = sessions{naiveInds(ni)}(1);
-    load(sprintf('JK%03dS%02dangle_tuning_predecision',mouse,session), 'spk')
-    load(sprintf('UberJK%03dS%02d',mouse,session), 'u')
+    load(sprintf('JK%03dS%02dangle_tuning_lasso_predecision_NC',mouse,session), 'spk')
+    load(sprintf('UberJK%03dS%02d_NC',mouse,session), 'u')
     fieldnames = fields(spk);
     for fi = 1 : length(fieldnames)
         naive(ni).(fieldnames{fi}) = spk.(fieldnames{fi});
@@ -159,8 +159,8 @@ for ni = 1 : length(naiveInds)
     naive(ni).depth = u.cellDepths(find(ismember(u.cellNums, spk.touchID))); % spk.,touchID is sorted
     
     session = sessions{naiveInds(ni)}(2);
-    load(sprintf('JK%03dS%02dangle_tuning_predecision',mouse,session), 'spk')
-    load(sprintf('UberJK%03dS%02d',mouse,session), 'u')
+    load(sprintf('JK%03dS%02dangle_tuning_lasso_predecision_NC',mouse,session), 'spk')
+    load(sprintf('UberJK%03dS%02d_NC',mouse,session), 'u')
     fieldnames = fields(spk);
     for fi = 1 : length(fieldnames)
         expert(ni).(fieldnames{fi}) = spk.(fieldnames{fi});
@@ -172,8 +172,8 @@ for ni = 1 : length(nonlearnerInds)
     mouse = mice(nonlearnerInds(ni));
     cd(sprintf('%s%03d',baseDir, mouse))
     session = sessions{nonlearnerInds(ni)}(1);
-    load(sprintf('JK%03dS%02dangle_tuning_predecision',mouse,session), 'spk')
-    load(sprintf('UberJK%03dS%02d',mouse,session), 'u')
+    load(sprintf('JK%03dS%02dangle_tuning_lasso_predecision_NC',mouse,session), 'spk')
+    load(sprintf('UberJK%03dS%02d_NC',mouse,session), 'u')
     fieldnames = fields(spk);
     for fi = 1 : length(fieldnames)
         nonlearner(ni).(fieldnames{fi}) = spk.(fieldnames{fi});
@@ -182,7 +182,7 @@ for ni = 1 : length(nonlearnerInds)
 end
 
 cd(baseDir)
-save('angle_tuning_summary_predecision.mat','naive','expert', 'nonlearner')
+save('angle_tuning_summary_predecision_NC.mat','naive','expert', 'nonlearner')
 
 
 %%

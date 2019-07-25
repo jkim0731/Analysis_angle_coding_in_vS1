@@ -40,7 +40,7 @@ toc
 %%
 clear
 tic
-baseDir = 'D:\JK\suite2p\';
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
 
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]}; 
@@ -78,5 +78,5 @@ end
 % end
 
 % save('Y:\Whiskernas\JK\suite2p\glm_results_withWTV_expert.mat', 'naive', 'expert', 'L4')
-save('Y:\Whiskernas\JK\suite2p\glm_results_WKV.mat', 'naive', 'expert')
+save('Y:\Whiskernas\JK\suite2p\glm_results_WKV_NC.mat', 'naive', 'expert')
 toc

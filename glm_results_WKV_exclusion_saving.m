@@ -13,3 +13,6 @@ for mi =  1 : length(mice)
         save(sprintf('%s%03d\\%s',baseDir,mouse,savefn), 'glmWKV')
     end
 end
+
+%%
+

@@ -1,4 +1,4 @@
-function glm = glm_results_cell_function(mouse, session, baseDir)
+function glm = glm_results_cell_function_touch(mouse, session, baseDir)
 
 %% For figure 3. GLM result plots fro function assignment in each cell
 % Notes:

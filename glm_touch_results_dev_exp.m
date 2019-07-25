@@ -1,4 +1,4 @@
-function devExp = glm_results_dev_exp_power(mouse, session, baseDir)
+function devExp = glm_touch_results_dev_exp(mouse, session, baseDir)
 
 %% For figure 4. Explanatory power of pole angle and whisker touch variables
 %% Also suits for other general purposes

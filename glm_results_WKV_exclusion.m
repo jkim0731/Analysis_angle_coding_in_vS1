@@ -36,8 +36,8 @@ glmWhisker = struct;
                             
                             
 %% dependent settings
-ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmWhisker_lasso_touchCell_JK%03dS%02d_R', mouse, session);
+ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
+glmfnBase = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R', mouse, session);
 
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))

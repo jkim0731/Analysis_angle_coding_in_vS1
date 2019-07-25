@@ -13,7 +13,7 @@ for ni = 1 : length(naiveInd)
     mouse = mice(naiveInd(ni));
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{naiveInd(ni)}(1);
-    savefn = sprintf('glm_DE_cellFunction_JK%03dS%02d',mouse, session);
+    savefn = sprintf('glm_DE_cellFunction_NC_JK%03dS%02d',mouse, session);
     glmDEfunction = glm_results_dev_exp_power(mouse, session, baseDir);
     save(savefn, 'glmDEfunction')
     naive(ni) = glmDEfunction;
@@ -23,7 +23,7 @@ for ei = 1 : length(expertInd)
     mouse = mice(expertInd(ei));
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{expertInd(ei)}(2);    
-    savefn = sprintf('glm_DE_cellFunction_JK%03dS%02d',mouse, session);
+    savefn = sprintf('glm_DE_cellFunction_NC_JK%03dS%02d',mouse, session);
     glmDEfunction = glm_results_dev_exp_power(mouse, session, baseDir);    
     save(savefn, 'glmDEfunction')
     expert(ei) = glmDEfunction;
@@ -41,7 +41,7 @@ end
 % end
 
 % save('Y:\Whiskernas\JK\suite2p\glm_results_responseType.mat', 'naive', 'expert', 'L4')
-save('Y:\Whiskernas\JK\suite2p\glm_results_responseType.mat', 'naive', 'expert')
+save('Y:\Whiskernas\JK\suite2p\glm_results_responseType_NC.mat', 'naive', 'expert')
 toc % takes about 8 min in 36 core 
 %%
 % clear

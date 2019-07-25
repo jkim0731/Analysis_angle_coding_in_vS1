@@ -1,6 +1,6 @@
-function devExp = glm_results_dev_exp_power(mouse, session, baseDir)
+function devExp = glm_results_dev_exp_wkv_touchCell(mouse, session, baseDir)
 
-%% For figure 4. Explanatory power of pole angle and whisker touch variables
+%% For figure 4. Explanatory power of whisker kinematic variables
 %% Also suits for other general purposes
 % Notes:
 %     Assume u is fixed. No change of u.cellNums (very important in indexing)
@@ -28,13 +28,14 @@ function devExp = glm_results_dev_exp_power(mouse, session, baseDir)
 %     devExp.corrVal
 
 % 2019/04/11 JK
+% Update:
+% 2019/07/25 Only for wkv
 
 %% basic settings
 repeat = 10;
 devExp = struct;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
-% glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R', mouse, session);
 glmfnBase = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R', mouse, session);
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))

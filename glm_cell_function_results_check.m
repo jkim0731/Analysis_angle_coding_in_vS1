@@ -23,7 +23,7 @@
 %%
 % clear
 tic
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
 
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]}; 
@@ -36,7 +36,7 @@ for ni = 1 : length(naiveInd)
     mouse = mice(naiveInd(ni));
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{naiveInd(ni)}(1);
-    load(sprintf('JK%03dS%02dglm_cell_function_lasso',mouse,session))
+    load(sprintf('JK%03dS%02dglm_cell_function_lasso_NC',mouse,session))
     naive(ni) = glm;
 end
 
@@ -45,7 +45,7 @@ for ei = 1 : length(expertInd)
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{expertInd(ei)}(2);    
 %     expert(ei) = glm_results_cell_function(mouse, session, baseDir);
-    load(sprintf('JK%03dS%02dglm_cell_function_lasso',mouse,session))
+    load(sprintf('JK%03dS%02dglm_cell_function_lasso_NC',mouse,session))
     expert(ei) = glm;
 end
 % 
@@ -62,7 +62,7 @@ end
 %     L4(mi) = glm_results_cell_function(mouse, session, baseDir);
 % end
 
-save('Y:\Whiskernas\JK\suite2p\cellFunctionLassoDE010.mat', 'naive', 'expert')
+save('Y:\Whiskernas\JK\suite2p\cellFunctionLasso_NC.mat', 'naive', 'expert')
 toc
 
 
