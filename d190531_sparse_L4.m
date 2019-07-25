@@ -9,7 +9,7 @@
 %%
 clear
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 mi = 1;
 
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
@@ -83,7 +83,7 @@ legend({'L2','L3','L4'}), xlabel('Spike rate (modulated; /frame)'), ylabel('Prop
 
 clear
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
 % depthRange = [1, 136, 350, 700]; % for L2, L3, L4
 depthRange = [1, 350, 700]; % for L2/3 and L4
@@ -161,7 +161,7 @@ legend({'L2/3','L4'}), xlabel('Spike rate (modulated; /frame)'), ylabel('Cumulat
 % number of samples)
 
 depthThresh = 350;
-prctileThresh = 5; % percentile in either direction.
+prctileThresh = 20; % percentile in either direction.
 histRange = 0:0.01:0.3;
 numNoiseBins = 10;
 mi = 1;
@@ -181,6 +181,7 @@ indCellLayers{1} = intersect(indCellNoise, indAllCellLayers{1});
 indCellLayers{2} = intersect(indCellNoise, indAllCellLayers{2});
 
 noiseRange = noiseThresh(1) : (noiseThresh(2) - noiseThresh(1)) / numNoiseBins : noiseThresh(2);
+noiseRange = sort(noiseRange);
 numSample = zeros(length(noiseRange)-1,1);
 indNoiseLayers = cell(2,length(numSample));
 

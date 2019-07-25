@@ -3,7 +3,7 @@
 %% plot DE vs noise
 baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56,70,74,75,76];
-sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,22],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]}; 
+sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]}; 
 
 cd(baseDir)
 load('glm_results_responseType')
@@ -13,7 +13,7 @@ for ni = naiveInds
     mouse = mice(ni);
     cd(sprintf('%s%03d',baseDir, mouse))
     session = sessions{ni}(1);
-    ufn = sprintf('UberJK%03dS%02d',mouse, session);
+    ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
     load(ufn)
     plot(u.noise, naive(ni).allDE, 'k.')
 end
@@ -53,7 +53,7 @@ for i = 1 : length(naive)
     mouse = mice(i);
     cd(sprintf('%s%03d',baseDir, mouse))
     session = sessions{i}(1);
-    ufn = sprintf('UberJK%03dS%02d',mouse, session);
+    ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
     load(ufn)
     
     upperInd = find(u.cellNums < 5000);
@@ -86,7 +86,7 @@ plot(range(2:end), mean(histUpper - histLower), 'k-')
 
 %% draw cell functions from noise-matched samples
 cd(baseDir)
-load('cellFunctionRidgeDE010')
+load('cellFunctionLasso_NC')
 touches = zeros(length(naive), 4); % 1: L2/3 C2, 2: L2/3 non-C2, 3: L4 C2, 4: L4 non-C2
 whiskings = zeros(length(naive), 4); 
 mixed = zeros(length(naive), 4);
@@ -96,7 +96,7 @@ for i = 1 : length(naive)
     mouse = mice(i);
     cd(sprintf('%s%03d',baseDir, mouse))
     session = sessions{i}(1);
-    ufn = sprintf('UberJK%03dS%02d',mouse, session);
+    ufn = sprintf('UberJK%03dS%02d_NC', mouse, session);
     load(ufn)
     
     upperInd = find(u.cellNums < 5000);

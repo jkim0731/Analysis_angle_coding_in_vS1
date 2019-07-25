@@ -80,8 +80,8 @@ L4depth = 350; % include 350 um as L4 (350 is the starting point)
 % angles = 45:15:135;
 
 %% dependent settings
-ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmWhiskerTouchVariablesONLY_JK%03dS%02d_R', mouse, session);
+ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
+glmfnBase = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R', mouse, session);
 % cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
 % spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
 
