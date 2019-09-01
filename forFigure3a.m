@@ -21,9 +21,9 @@ mouse = 25;
 session = 4;
 repeat = 10;
 %% dependent settings
-ufn = sprintf('UberJK%03dS%02d',mouse, session);
-glmfnBase = sprintf('glmResponseType_JK%03dS%02d_m45_R', mouse, session);
-angletuningFn = sprintf('JK%03dS%02dangle_tuning', mouse, session);
+ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R', mouse, session);
+angletuningFn = sprintf('JK%03dS%02dangle_tuning_lasso_predecision_NC', mouse, session);
 %% load files
 cd(baseDir)
 load('glm_results_responseType', 'naive')

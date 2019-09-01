@@ -159,9 +159,12 @@ glm.cellFitIndL23 = find(u.cellDepths(fitInd) < L4depth);
 glm.cellFitDepths = u.cellDepths(fitInd);
 glm.cellFitxpoint = u.cellx(fitInd);
 glm.cellFitypoint = u.celly(fitInd);
-glm.cellNums = u.cellNums;
-glm.cellDepths = u.cellDepths;
-glm.isC2 = u.isC2;
+glm.cellNums = u.cellNums(fitInd);
+glm.cellDepths = u.cellDepths(fitInd);
+glm.isC2 = u.isC2(fitInd);
+glm.allCell.cellNums = u.cellNums;
+glm.allCell.cellDepths = u.cellDepths;
+glm.allCell.isC2 = u.isC2;
 
 %% function assignment
 glm.touchID = glm.cellFitID(find(cellfun(@(x) x(1), glm.cellFunction)));

@@ -57,7 +57,7 @@ close all
 % JK025 S04 p5, tai 25, 38 for sharp tuning (45)
 % JK025 S04 p5, tai 28 for multipeak
 % JK025 S04 p5, tai 32, 35, 42 for not-tuned
-tai = 35;
+tai = 1;
 %
 cid = touchID(tai);
 example_angle_tuning_calcium(u, ca, spk, cid)

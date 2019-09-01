@@ -578,8 +578,8 @@ for ei = 1 : length(expertInds)
 end
 
 figure, hold on
-shadedErrorBar(angles, mean(answerLickTime(:,:,1)), std(answerLickTime(:,:,1)), 'lineprop', 'b-')
-shadedErrorBar(angles, mean(answerLickTime(:,:,2)), std(answerLickTime(:,:,2)), 'lineprop', 'r-')
+shadedErrorBar(angles, mean(answerLickTime(:,:,1)), std(answerLickTime(:,:,1))/sqrt(length(expertInds)), 'lineprop', 'b-')
+shadedErrorBar(angles, mean(answerLickTime(:,:,2)), std(answerLickTime(:,:,2))/sqrt(length(expertInds)), 'lineprop', 'r-')
 
 xlabel('Angle (\circ)'), ylabel('Time after pole onset (s)')
 xticks(angles)
@@ -619,10 +619,10 @@ for ei = 1 : length(expertInds)
         end
     end
 end
-%%
+%
 figure, hold on
-shadedErrorBar(angles, mean(firstLickTime(:,:,1)), std(firstLickTime(:,:,1)), 'lineprop', 'b-')
-shadedErrorBar(angles, mean(firstLickTime(:,:,2)), std(firstLickTime(:,:,2)), 'lineprop', 'r-')
+shadedErrorBar(angles, mean(firstLickTime(:,:,1)), std(firstLickTime(:,:,1))/sqrt(length(expertInds)), 'lineprop', 'b-')
+shadedErrorBar(angles, mean(firstLickTime(:,:,2)), std(firstLickTime(:,:,2))/sqrt(length(expertInds)), 'lineprop', 'r-')
 
 xlabel('Angle (\circ)'), ylabel('Time after pole onset (s)')
 xticks(angles)
@@ -643,8 +643,9 @@ angles = 45:15:135;
 firstLickTime = zeros(length(expertInds), length(angles), 2);
 correctAnswerLickTime = zeros(length(expertInds), length(angles), 2);
 lickRate = zeros(length(expertInds), length(angles), 2);
+wastedLicks = zeros(length(expertInds), length(angles), 2);
 for ei = 1 : length(expertInds)
-% for ei = 1
+% for ei = 5
     mouse = mice(expertInds(ei));
     for si = 1 : 2 % 1 for naive, 2 for expert
 %     for si = 1
@@ -654,32 +655,57 @@ for ei = 1 : length(expertInds)
         load([dn,ufn],'u')
         answerTrialInds = find(cellfun(@(x) length(x.answerLickTime), u.trials));
         for ai = 1 : length(angles)
+%         for ai = 6
             angleTrialInds = find(cellfun(@(x) x.angle == angles(ai), u.trials));
             correctTrialInds = find(cellfun(@(x) x.response == 1, u.trials));
             trialInds = intersect(intersect(angleTrialInds, answerTrialInds), correctTrialInds);
             allLickTimes = cellfun(@(x) union(union(x.leftLickTime, x.rightLickTime), x.answerLickTime), u.trials(trialInds), 'uniformoutput', false);
+            
+            for alti = 1 : length(allLickTimes)
+                temp = allLickTimes{alti};
+                while min(diff(temp)) < 1/10
+                    errorInd = find(diff(temp) < 1/10, 1);
+                    temp(errorInd+1) = [];
+                end
+                allLickTimes{alti} = temp;
+            end
             firstLickInds = cellfun(@(x,y) find(y > x.poleUpOnsetTime, 1), u.trials(trialInds), allLickTimes, 'uniformoutput', false);
-            answerLickInds = cellfun(@(x,y) find(y == x.answerLickTime), u.trials(trialInds), allLickTimes, 'uniformoutput', false);
+            answerLickInds = cellfun(@(x,y) find(y > x.poleUpOnsetTime+1,1), u.trials(trialInds), allLickTimes, 'uniformoutput', false);
+            emptyInd = find(cellfun(@isempty, answerLickInds));
+            if ~isempty(emptyInd)
+                answerLickInds(emptyInd) = firstLickInds(emptyInd);
+            end
             firstLickTime(ei,ai,si) = mean(cellfun(@(x,y,z) y(z) - x.poleUpOnsetTime, u.trials(trialInds), allLickTimes, firstLickInds));
             correctAnswerLickTime(ei,ai,si) = mean(cellfun(@(x) x.answerLickTime - x.poleUpOnsetTime, u.trials(trialInds)));
             lickRate(ei,ai,si) = nanmean(cellfun(@(x,y,z) (y-z)/(x(y) - x(z)), allLickTimes, answerLickInds, firstLickInds));
-                
+            wastedLicks(ei,ai,si) = mean(cell2mat(answerLickInds) - cell2mat(firstLickInds));    
         end
     end
 end
 %
 figure, hold on
-shadedErrorBar(angles, mean(lickRate(:,:,1)), std(lickRate(:,:,1)), 'lineprop', 'b-')
-shadedErrorBar(angles, mean(lickRate(:,:,2)), std(lickRate(:,:,2)), 'lineprop', 'r-')
+shadedErrorBar(angles, mean(lickRate(:,:,1)), std(lickRate(:,:,1))/sqrt(length(expertInds)), 'lineprop', 'b-')
+shadedErrorBar(angles, mean(lickRate(:,:,2)), std(lickRate(:,:,2))/sqrt(length(expertInds)), 'lineprop', 'r-')
 
 xlabel('Angle (\circ)'), ylabel('(Hz)')
 xticks(angles)
 title('Lick rate')
 %%
 figure, hold on
-shadedErrorBar(angles, mean(correctAnswerLickTime(:,:,1)), std(correctAnswerLickTime(:,:,1)), 'lineprop', 'b-')
-shadedErrorBar(angles, mean(correctAnswerLickTime(:,:,2)), std(correctAnswerLickTime(:,:,2)), 'lineprop', 'r-')
+shadedErrorBar(angles, mean(correctAnswerLickTime(:,:,1)), std(correctAnswerLickTime(:,:,1))/sqrt(length(expertInds)), 'lineprop', 'b-')
+shadedErrorBar(angles, mean(correctAnswerLickTime(:,:,2)), std(correctAnswerLickTime(:,:,2))/sqrt(length(expertInds)), 'lineprop', 'r-')
 
 xlabel('Angle (\circ)'), ylabel('Time after pole onset (s)')
 xticks(angles)
 title('Correct answer lick time')
+
+%% (3) Response
+% How many licks are wasted?
+
+figure, hold on
+shadedErrorBar(angles, mean(wastedLicks(:,:,1)), std(wastedLicks(:,:,1))/sqrt(length(expertInds)), 'lineprop', 'b-')
+shadedErrorBar(angles, mean(wastedLicks(:,:,2)), std(wastedLicks(:,:,2))/sqrt(length(expertInds)), 'lineprop', 'r-')
+
+xlabel('Angle (\circ)'), ylabel('# of licks')
+xticks(angles)
+title('# of licks between first and answer lick')

@@ -96,7 +96,7 @@ while true
         yticks([])
         ylabel([num2str(angles(i)), ' \circ'])
         if i == 1
-            title('Calcium (Z-score)')
+            title('Calcium')
         end
         set(gca, 'fontweight', 'bold')
         subplot(length(angles),2,i*2)
@@ -109,7 +109,7 @@ while true
         end
         yticks([])
         if i == 1
-            title('Spike (#)')
+            title('Spikes')
         end
         set(gca, 'fontweight', 'bold')
     end
@@ -124,7 +124,7 @@ while true
     xticks([]);
     yticks([1:7]);
     yticklabels({'45\circ', '60\circ', '75\circ', '90\circ', '105\circ', '120\circ', '135\circ'})
-    title('Calcium during pole in')
+    title('Calcium')
     set(gca, 'fontweight', 'bold')
 %     colorbar
     
@@ -159,7 +159,7 @@ while true
     colors = jet(length(angles));
     yticks([]);
     xticks([]);
-    title('Spikes during pole in')
+    title('Spikes')
 %     colorbar
     
     subplot(324)
@@ -183,7 +183,7 @@ while true
     for i = 1 : length(angles)
         plot(-baselineFrames+1:afterFrames, sumHeatMapSpk(i,:), 'linewidth', 3, 'color', colors(i,:))
     end
-    legend([p1,p2,p3,p4,p5,p6,p7], {'45\circ','60\circ','75\circ','90\circ','105\circ','120\circ','135\circ'})
+%     legend([p1,p2,p3,p4,p5,p6,p7], {'45\circ','60\circ','75\circ','90\circ','105\circ','120\circ','135\circ'})
     ylabel('\Delta #Spk')
     xlim([-baselineFrames+1 afterFrames])
     xticks([-3, 0, 3, 6, 9, 12])

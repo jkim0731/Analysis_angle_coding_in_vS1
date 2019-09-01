@@ -183,10 +183,10 @@ for mi = 1 : length(mice)
         
         % settings for variables to be saved later
 %         spkValAllCell = cell(length(touchID),17);
-        spkValAllCell = cell(length(touchID),17);
-        anovaPAllCell = zeros(length(touchID),17);
-        tunedAllCell = zeros(length(touchID),17);
-        tuneAngleAllCell = zeros(length(touchID),17);
+        spkValAllCell = cell(length(touchID),27);
+        anovaPAllCell = zeros(length(touchID),27);
+        tunedAllCell = zeros(length(touchID),27);
+        tuneAngleAllCell = zeros(length(touchID),27);
         
         % angle tuning in each cell
         parfor ci = 1:length(touchID)
@@ -202,7 +202,7 @@ for mi = 1 : length(mice)
             angleInds = angleTrialInds{plane}; % index of trialInds            
             modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & allPredictorsWKV
             
-            spkValAll = cell(1,29);
+            spkValAll = cell(1,27);
             
             % all spikes
             cind = find(u.trials{trialInds(1)}.neuindSession == cellNum);
