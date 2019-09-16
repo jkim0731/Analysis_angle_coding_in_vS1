@@ -8,14 +8,16 @@ sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveInd = 1:length(mice);
 expertInd = find(cellfun(@length, sessions)==2);
 
-
-for ni = 1 : length(naiveInd)
+%%
+% for ni = 1 : length(naiveInd)
+% for ni = 7 : length(naiveInd)
+for ni = 6
     mouse = mice(naiveInd(ni));
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{naiveInd(ni)}(1);    
     naive(ni) = glm_results_dev_exp_touch(mouse, session, baseDir);
 end
-
+%%
 for ei = 1 : length(expertInd)
     mouse = mice(expertInd(ei));
     cd(sprintf('%s%03d',baseDir,mouse))

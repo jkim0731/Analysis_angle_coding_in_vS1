@@ -1,3 +1,10 @@
+%%
+% Temporary fix for JK038 S02, where touch glm was run and then one trial was removed because of w3 fix (about dome-like mask and kappaV projection plane).
+% WKV glm was run after that fix again, but not touch GLM (just because it takes too long, and also changing it will change very minute results too.)
+% There is one less trial in WKV model (#55, and uber too), and treat each model differently to see if that makes it work.
+
+
+%%
 % Making spike matrix as in u, but from a model with removing selected whisker kinematic variables.
 % This is to show which variables are important in contructing angle tuning.
 % Only consider previously angle-tuned cells.
@@ -7,11 +14,16 @@
 % Then, build a full model from touch glm.
 % After that, build a full model from wkv glm.
 
+
+%%
+
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
 % baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
+% mice = [38];
 % sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+% sessions = {[2]};
 % sessions = {[],[3,10],[3,21],[1,17],[7],[],[1,23],[],[],[],[],[]};
 % sessions = {[],[3],[],[1],[7],[],[],[],[],[],[],[]};
 cd(baseDir)
@@ -27,11 +39,14 @@ thresholdPermutation = 0.05;
 % naiveModelTune = struct;
 % expertModelTune = struct;
 % for mi = 1 : length(mice)
-for mi = 6
+%% this has to match with the structure of 'cellFunctionLasso_NC'
+for mi = 6 
+%%
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-%     for si = 1 : length(sessions{mi})
+    %% this has to match with the structure of 'cellFunctionLasso_NC'
     for si = 1
+    %%
         session = sessions{mi}(si);        
         savefn = sprintf('angle_tuning_model_lasso_NC_JK%03dS%02d', mouse, session);
         
@@ -63,9 +78,41 @@ for mi = 6
         allPredictorsWKV = cell(8,1);
         
         % load touch glm results and get coefficients (for all active cells)
+        % remove the corresponding predictors (trial # 55, index 54)
         glmfn = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R10',mouse, session); % these are only from all active cells
         load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors')
         ap2 = allPredictors;
+        
+%% Here comes the treatment for JK038 S02 error trial (trial # 55 of lower plane is included in ap2, but not in ap1 and u)
+        lowerplaneInd = find(cellfun(@(x) ismember(5,x.planes), u.trials));
+        lowerplaneTrialNums = cellfun(@(x) x.trialNum, u.trials(lowerplaneInd));
+        ind2removeFromAp2 = find(lowerplaneTrialNums > 55, 1, 'first');
+        % now, remove this index from ap2{5:8};
+        % first, divide ap2{5:8} into trials using nans. calculate from 5th
+        % plane and then apply for planes 5-8 
+        naninds = find(isnan(ap2{5}(:,1)));
+        nanindChanges = find(diff(naninds)>1);
+        numTrials = length(nanindChanges);
+        ap2temp = ap2;
+        % confirmed that this numTrials is 1 larger than
+        % lowerplaneTrialNums
+        for i = 5 : 8
+            ap2{i}(naninds(nanindChanges(ind2removeFromAp2))-4+1 : naninds(nanindChanges(ind2removeFromAp2+1))-4,:) = [];
+        end
+%% test if I removed the right one
+%     nanindsAfter = find(isnan(ap2{5}(:,1)));
+%     nanindChangesAfter = find(diff(nanindsAfter)>1);
+% 
+%     compare(ap2temp{5}(naninds(nanindChanges(ind2removeFromAp2-1))-4+1:naninds(nanindChanges(ind2removeFromAp2))-4,:), ...
+%         ap2{5}(nanindsAfter(nanindChangesAfter(ind2removeFromAp2-1))-4+1:nanindsAfter(nanindChangesAfter(ind2removeFromAp2))-4,:))
+% 
+%     compare(ap2temp{5}(naninds(nanindChanges(ind2removeFromAp2+1))-4+1:naninds(nanindChanges(ind2removeFromAp2+2))-4,:), ...
+%         ap2{5}(nanindsAfter(nanindChangesAfter(ind2removeFromAp2))-4+1:nanindsAfter(nanindChangesAfter(ind2removeFromAp2+1))-4,:))
+%     
+% naninds1 = find(isnan(ap1{5}(:,1)));
+% naninds2 = find(isnan(ap2{5}(:,1)));
+% compare(naninds1, naninds2)
+%% The rest continues the same         
         cIDAllTouch = cIDAll;
         coeffs = zeros(length(fitCoeffs),length(fitCoeffs{1}),10);
         for gi = 1 : 10
@@ -84,12 +131,11 @@ for mi = 6
         % convert touch glm predictors back to each trial
         allPredictorsTouch = cell(8,1);
         for i = 1 : 8
-            if ~isempty(allPredictors{i}) % it can be empty in case of JK027 S09 and S10
-                naninds = find(isnan(allPredictors{i}(:,1)));
+            if ~isempty(ap2{i}) % it can be empty in case of JK027 S09 and S10
+                naninds = find(isnan(ap2{i}(:,1)));
                 nanindChanges = find(diff(naninds)>1);
                 numTrials = length(nanindChanges);
                 allPredictorsTouch{i} = cell(numTrials,1);
-                allPredictorsWKV{i} = cell(numTrials,1);
                 for j = 1 : numTrials
                     allPredictorsTouch{i}{j} = ap2{i}(naninds(nanindChanges(j))+1:naninds(nanindChanges(j)+1)-1,:);
                     allPredictorsWKV{i}{j} = ap1{i}(naninds(nanindChanges(j))+1:naninds(nanindChanges(j)+1)-1,:);
@@ -164,20 +210,19 @@ for mi = 6
             end
         end
         
-        
         % Each allPredictors should have corresponding trial index of uber
         % array, considering existence of predecision touches and angles
-        % It should be the same between WKV and Touch GLM
-        allPredictorsTouchAngleInds = cell(8,1); % index of predictors{i}
+        % Treat WKV and Touch GLM the same, since the corresponding error
+        % trial in touch GLM model is gone.
+        allPredictorsTouchAngleInds = cell(8,1); % index of ap1{i} & ap2{i}
         for i = 1 : 8
-            tempInd = find(cellfun(@(x) ismember(i, x.planes), u.trials));
+            tempIndTouch = find(cellfun(@(x) ismember(i, x.planes), u.trials));
             allPredictorsTouchAngleInds{i} = cell(length(angles),1);
             for ai = 1 : length(angles)
-                allPredictorsTouchAngleInds{i}{ai} = find(ismember( tempInd, intersect(intersect(tempInd, touchTrialInd), ...
-                    find(cellfun(@(x) x.angle == angles(ai), u.trials))) ));
+                allPredictorsTouchAngleInds{i}{ai} = find(ismember( tempIndTouch, intersect(intersect(tempIndTouch, touchTrialInd), ...
+                    find(cellfun(@(x) x.angle == angles(ai), u.trials))) ));                
             end
         end
-        
         
         % settings for variables to be saved later
 %         spkValAllCell = cell(length(touchID),17);
@@ -187,8 +232,8 @@ for mi = 6
         tuneAngleAllCell = zeros(length(touchID),27);
         
         % angle tuning in each cell
-%         parfor ci = 1:length(touchID)
-        for ci = 1:length(touchID)
+        parfor ci = 1:length(touchID)
+%         for ci = 1:length(touchID)
 %         for ci = 27
             fprintf('Processing JK%03d S%02d touch cell %d / %d\n', mouse, session, ci, length(touchID))
             cellNum = touchID(ci);
@@ -198,7 +243,7 @@ for mi = 6
             spkTouchFrames = touchFrames{plane};
             baselineFrames = beforePoleUpFrames{plane};
             angleInds = angleTrialInds{plane}; % index of trialInds            
-            modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & allPredictorsWKV
+            modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & WKV
             
             spkValAll = cell(1,27);
             

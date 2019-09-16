@@ -98,8 +98,8 @@ kappasV(midpoint)
 
 
 %%
-% tn = '217';
-tn = '218';
+tn = '217';
+% tn = '218';
 
 load([tn,'_WL_2pad.mat'])
 load([tn,'_WST.mat'])
@@ -107,10 +107,11 @@ load([tn,'_WF_2pad.mat'])
 w3 = Whisker.Whisker3D_2pad(ws);
 wfnew = Whisker.WhiskerFinal_2pad(wl,w3);
 
-
+%
 poleFrames = union(wf.poleUpFrames, wf.poleMovingFrames);
 ylim = [nanmin(union(wf.kappaV, wfnew.kappaV)), nanmax(union(wf.kappaV, wfnew.kappaV))];
-figure('units', 'normalized', 'outerposition', [0 0.2 1 0.3]);
+figure('units', 'normalized', 'outerposition', [0 0.2 1 0.6]);
+subplot(211)
 hold on,
 plot(wf.kappaV, 'k-')
 plot(wfnew.kappaV, 'r-')
@@ -123,3 +124,21 @@ plot(wf.kappaV, 'k-')
 plot(wfnew.kappaV, 'r-')
 
 legend({'old', 'new'})
+title('\kappa_V')
+ylabel('Curvature (1/mm)')
+
+subplot(212)
+hold on
+plot(wf.phi, 'k-')
+plot(wfnew.phi, 'r.')
+ylim = [nanmin(union(wf.phi, wfnew.phi)), nanmax(union(wf.phi, wfnew.phi))];
+patch([poleFrames(1), poleFrames(1), poleFrames(end), poleFrames(end)], [ylim(1), ylim(2), ylim(2), ylim(1)], [0.9 0.9 0.9], 'linestyle', 'none')
+for i = 1 : length(wf.protractionTFchunks)
+    frames = wf.protractionTFchunks{i};
+    patch([frames(1), frames(1), frames(end), frames(end)], [ylim(1), ylim(2), ylim(2), ylim(1)], [0.7 0.7 0.7], 'linestyle', 'none')
+end
+plot(wf.phi, 'k-')
+plot(wfnew.phi, 'r.')
+title('\phi')
+ylabel('Angle (\circ)')
+%%
