@@ -18,6 +18,9 @@ for ni = 1 : length(mice)
         naive(ni).(fieldnames{fi}) = spk.(fieldnames{fi});
     end    
     naive(ni).depth = u.cellDepths(find(ismember(u.cellNums, spk.touchID))); % spk.,touchID is sorted
+    
+    wrongInds = intersect(find(naive(ni).multimodal), find(naive(ni).unimodalBroad));
+    naive(ni).multimodal(wrongInds) = 0;
 end
 
 for ei = 1 : length(expertInds)
@@ -31,7 +34,15 @@ for ei = 1 : length(expertInds)
         expert(ei).(fieldnames{fi}) = spk.(fieldnames{fi});
     end
     expert(ei).depth = u.cellDepths(find(ismember(u.cellNums, spk.touchID))); % spk.,touchID is sorted
+    
+    wrongInds = intersect(find(expert(ei).multimodal), find(expert(ei).unimodalBroad));
+    expert(ei).multimodal(wrongInds) = 0;
 end
 
 cd(baseDir)
 save('angle_tuning_summary_predecision_NC.mat','naive','expert')
+
+
+
+
+

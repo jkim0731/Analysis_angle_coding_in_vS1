@@ -81,7 +81,7 @@ while true
     climCa = [min(cellfun(@(x) min(min(cell2mat(x))), egHeatMapCa)), max(cellfun(@(x) max(max(cell2mat(x))), egHeatMapCa))];
     climSpk = [min(cellfun(@(x) min(min(cell2mat(x))), egHeatMapSpk)), max(cellfun(@(x) max(max(cell2mat(x))), egHeatMapSpk))];
     % clim = [prctile(allValHeatMap(:), 10), prctile(allValHeatMap(:), 90)];
-    h1 = figure(1);
+    h1 = figure(7881);
     h1.Units = 'normalized';
     h1.OuterPosition = [0.1, 0.1, 0.2, 0.6];
     for i = 1 : length(angles)
@@ -115,7 +115,7 @@ while true
     end
     % imagesc(allValHeatMap, clim), colormap gray
     %
-    h2 = figure(2);
+    h2 = figure(7882);
     h2.Units = 'normalized';
     h2.OuterPosition = [0.3, 0.1, 0.3, 0.6];
 
