@@ -7,6 +7,12 @@
 % Then, build a full model from touch glm.
 % After that, build a full model from wkv glm.
 
+% 2019/09/27 JK
+% Copied from wkv_angl_tuning_each
+% Major change: calculate angle tuning based on per-touch spikes,
+% same as in angle_tuning_preAnswer_perTouch_spkOnly
+% Added some properties to be calculated. (type, modulation, sharpness)
+
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
 % baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
@@ -23,18 +29,20 @@ angles = 45:15:135;
 numResampling = 10000;
 thresholdAnovaP = 0.05;
 thresholdPermutation = 0.05;
+anovactype = 'hsd';
+thresholdCategory = 0.05;
 
 % naiveModelTune = struct;
 % expertModelTune = struct;
-% for mi = 1 : length(mice)
-for emi = 1:length(expertMi)
-    mi = expertMi(emi);
+for mi = 1 : length(mice)
+% for emi = 1:length(expertMi)
+%     mi = expertMi(emi);
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
-%     for si = 1 : length(sessions{mi})
-    for si = 2
+    for si = 1 : length(sessions{mi})
+%     for si = 2
         session = sessions{mi}(si);        
-        savefn = sprintf('angle_tuning_model_lasso_NC_JK%03dS%02d', mouse, session);
+        savefn = sprintf('angle_tuning_model_lasso_NC_preAnswer_perTouch_JK%03dS%02d', mouse, session);
         
         % load uber
         ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
@@ -120,24 +128,25 @@ for emi = 1:length(expertMi)
 %         Each in different planes
         
         % making templates
-        % find predecision touch trials
-        decisionTime = cell(length(u.trials),1);
-        for di = 1 : length(decisionTime)
+        % find preAnswer touch trials
+        answerTime = cell(length(u.trials),1);
+        for di = 1 : length(answerTime)
             if isempty(u.trials{di}.answerLickTime)
-                decisionTime{di} = u.trials{di}.poleDownOnsetTime;
+                answerTime{di} = u.trials{di}.poleDownOnsetTime;
             else
-                decisionTime{di} = u.trials{di}.answerLickTime;
+                answerTime{di} = u.trials{di}.answerLickTime;
             end
         end
         tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
-        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), decisionTime(tempTouchTrialInd)));
-        touchTrialInd = tempTouchTrialInd(pdTouchInd); % index of u
+        paTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), answerTime(tempTouchTrialInd)));
+        touchTrialInd = tempTouchTrialInd(paTouchInd); % index of u
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
         planeTrialsNum = cell(numPlane,1);
         poleUpFrames = cell(numPlane,1);
         beforePoleUpFrames = cell(numPlane,1);
         touchFrames = cell(numPlane,1);
+        numTouchPreAnswer = cell(numPlane,1);
         angleTrialInds = cell(numPlane,1);
         for pi = 1 : numPlane
             planeTrialsInd{pi} = intersect(find(cellfun(@(x) ismember(pi, x.planes), u.trials)), touchTrialInd); % index of u
@@ -145,19 +154,21 @@ for emi = 1:length(expertMi)
             poleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} >= x.poleUpTime(1) & x.tpmTime{tempInd} <= x.poleUpTime(end)), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
             beforePoleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} < x.poleUpOnsetTime), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
             touchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
+            numTouchPreAnswer{pi} = zeros(length(planeTrialsInd{pi}),1);
             for ti = 1 : length(planeTrialsInd{pi})
                 tempTrial = u.trials{planeTrialsInd{pi}(ti)};
                 if isempty(tempTrial.answerLickTime)
-                    tempDecisionTime = tempTrial.poleDownOnsetTime;
+                    tempAnswerTime = tempTrial.poleDownOnsetTime;
                 else
-                    tempDecisionTime = tempTrial.answerLickTime;
+                    tempAnswerTime = tempTrial.answerLickTime;
                 end
-                preDecisionInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempDecisionTime, tempTrial.protractionTouchChunksByWhisking));
-                tempFrames = cell(1, length(preDecisionInd));
+                preAnswerInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempAnswerTime, tempTrial.protractionTouchChunksByWhisking));
+                tempFrames = cell(1, length(preAnswerInd));
                 for ptci = 1 : length(tempFrames)
                     tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
                 end
                 touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
+                numTouchPreAnswer{pi}(ti) = length(preAnswerInd);
             end
             angleTrialInds{pi} = cell(length(angles),1); % index of planeTrialsInd{pi}
             for ai = 1 : length(angles)
@@ -186,7 +197,12 @@ for emi = 1:length(expertMi)
         anovaPAllCell = zeros(length(touchID),27);
         tunedAllCell = zeros(length(touchID),27);
         tuneAngleAllCell = zeros(length(touchID),27);
-        
+        tuneModulationAllCell = zeros(length(touchID), 27);
+        tuneSharpnessAllCell = zeros(length(touchID),27);
+        unimodalSingleAllCell = zeros(length(touchID),27);
+        unimodalBroadAllCell = zeros(length(touchID),27);
+        multimodalAllCell = zeros(length(touchID),27);
+            
         % angle tuning in each cell
         parfor ci = 1:length(touchID)
 %         for ci = 1:length(touchID)
@@ -200,6 +216,7 @@ for emi = 1:length(expertMi)
             baselineFrames = beforePoleUpFrames{plane};
             angleInds = angleTrialInds{plane}; % index of trialInds            
             modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & allPredictorsWKV
+            numTouch = numTouchPreAnswer{plane};
             
             spkValAll = cell(1,27);
             
@@ -211,8 +228,9 @@ for emi = 1:length(expertMi)
                 trialAngleInd = angleInds{ai};               
                 spkValAll{1}{ai} = zeros(length(trialAngleInd),1);
                 for ti = 1 : length(trialAngleInd)
-                    tempInd = trialAngleInd(ti);
-                    spkValAll{1}{ai}(ti) = mean(tempSpk{tempInd}(spkTouchFrames{tempInd})) - mean(tempSpk{tempInd}(baselineFrames{tempInd}));
+                    tempInd = trialAngleInd(ti);                    
+                    spkValAll{1}{ai}(ti) = sum( tempSpk{tempInd}(spkTouchFrames{tempInd}) - mean(tempSpk{tempInd}(baselineFrames{tempInd})) ) / numTouch(tempInd);
+                    % Delta inferred spike per touch 2019/09/27
                 end
             end
             
@@ -233,22 +251,22 @@ for emi = 1:length(expertMi)
                     tempUInd = find(cellfun(@(x) ismember(plane, x.planes), u.trials));
                     uInd = tempUInd(tempInd);
                     matchingInd = find(trialInds == uInd);
-                    spkValAll{2}{ai}(ti) = mean(model(spkTouchFrames{matchingInd})) - nanmean(model(baselineFrames{matchingInd}));
+                    spkValAll{2}{ai}(ti) = sum( model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd})) ) / numTouch(matchingInd);
                 end
             end
             
-            % whiskerTouchMat = [maxDkappaHMat, maxDkappaVMat, maxDthetaMat, maxDphiMat, maxSlideDistanceMat, maxDurationMat, ...    
+            % whiskerTouchMat = [maxDthetaMat, maxDphiMat, maxDkappaHMat, maxDkappaVMat, maxSlideDistanceMat, maxDurationMat, ...    
 %                             thetaAtTouchMat, phiAtTouchMat, kappaHAtTouchMat, kappaVAtTouchMat, arcLengthAtTouchMat, touchCountMat];
 
-            % from full wkv glm (#3 ~ #15)
+            % from full wkv glm (#3 ~ #15), removeOne
             coeffInd = find(cIDAllWKV == cellNum);
             inds = cell(25,1);
             coeffLength = size(meanCoeffsWKV,2);
             inds{1} = 1:coeffLength;
-            inds{2} = setdiff(1:coeffLength, 8:10); % maxDthetaMat
-            inds{3} = setdiff(1:coeffLength, 11:13); % maxDphiMat
-            inds{4} = setdiff(1:coeffLength, 2:4); % maxDkappaHMat
-            inds{5} = setdiff(1:coeffLength, 5:7); % maxDkappaVMat
+            inds{2} = setdiff(1:coeffLength, 2:4); % maxDthetaMat
+            inds{3} = setdiff(1:coeffLength, 5:7); % maxDphiMat
+            inds{4} = setdiff(1:coeffLength, 8:10); % maxDkappaHMat
+            inds{5} = setdiff(1:coeffLength, 11:13); % maxDkappaVMat
             inds{6} = setdiff(1:coeffLength, 14:16); % maxSlideDistanceMat
             inds{7} = setdiff(1:coeffLength, 17:19); % maxDurationMat
             inds{8} = setdiff(1:coeffLength, 20:22); % thetaAtTouchMat
@@ -258,10 +276,10 @@ for emi = 1:length(expertMi)
             inds{12} = setdiff(1:coeffLength, 32:34); % arcLengthAtTouchMat
             inds{13} = setdiff(1:coeffLength, 35:37); % touchCountMat
             
-            inds{14} = [1,8:10];
-            inds{15} = [1,11:13];
-            inds{16} = [1,2:4];
-            inds{17} = [1,5:7];
+            inds{14} = [1,2:4];
+            inds{15} = [1,5:7];
+            inds{16} = [1,8:10];
+            inds{17} = [1,11:13];
             inds{18} = [1,14:16];
             inds{19} = [1,17:19];
             inds{20} = [1,20:22];
@@ -275,9 +293,8 @@ for emi = 1:length(expertMi)
                 spkValAll{i} = cell(length(angles),1);
             end
             
-            anovaPcell = zeros(1,27);
-            tunedCell = zeros(1,27);
-            tuneAngleCell = nan(1,27);
+            
+            
             for ai = 1 : length(angles)
                 trialAngleInd = modelTouchAngleInds{ai};
                 for i = 3 : 27
@@ -296,12 +313,22 @@ for emi = 1:length(expertMi)
                     
                     for i = 1 : 25
                         model = exp(tempInput(:,inds{i})*tempCoeff(inds{i})');
-                        spkValAll{i+2}{ai}(ti) = nanmean(model(spkTouchFrames{matchingInd})) - nanmean(model(baselineFrames{matchingInd}));
+                        spkValAll{i+2}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);                        
                     end
                 end
             end
             
+            
             % ANOVA in each configuration            
+            anovaPcell = zeros(1,27);
+            tunedCell = zeros(1,27);
+            tuneAngleCell = nan(1,27);
+            tuneModulationCell = zeros(1,27);
+            tuneSharpnessCell = zeros(1,27);
+            unimodalSingleCell = zeros(1,27);
+            unimodalBroadCell = zeros(1,27);
+            multimodalCell = zeros(1,27);
+            
             anovaVal = cell2mat(spkValAll{1});
             groupAnova = zeros(size(anovaVal));
             angleLengths = [0;cumsum(cellfun(@length, spkValAll{1}))];
@@ -310,7 +337,11 @@ for emi = 1:length(expertMi)
             end
             for i = 1 : size(spkValAll,2)
                 anovaVal = cell2mat(spkValAll{i});
-                anovaP = anova1(anovaVal, groupAnova, 'off');
+                
+                
+                [anovaP, ~, anovaStat] = anova1(anovaVal, groupAnova, 'off');
+                spkPairComp = multcompare(anovaStat, 'Ctype', anovactype, 'Display', 'off');
+                spkMeans = anovaStat.means;
                 anovaPcell(i) = anovaP;
                 meanVal = cellfun(@nanmean, spkValAll{i});
                 tempH = cellfun(@(x) ttest(x), spkValAll{i});
@@ -327,7 +358,52 @@ for emi = 1:length(expertMi)
                         tunedCell(i) = 1;                        
                         [~, maxind] = max(abs(meanVal(sigInd)));
                         tunedAngleInd = sigInd(maxind);
-                        tuneAngleCell(i) = angles(tunedAngleInd);                    
+                        tuneAngleCell(i) = angles(tunedAngleInd);
+                        tuneModulationCell(i) = max(spkMeans) - min(spkMeans);
+                        tuneSharpnessCell(i) = spkMeans(tunedAngleInd) - mean(spkMeans(setdiff(1:length(angles), tunedAngleInd)));
+                        
+                        % Categorization
+                        ind__1 = find(spkPairComp(:,1) == tunedAngleInd);
+                        ind__2 = find(spkPairComp(:,2) == tunedAngleInd);
+                        testInd = union(ind__1, ind__2);
+                        insigDiffInd = find(spkPairComp(testInd,6) >= thresholdCategory);
+                        sigDiffInd = find(spkPairComp(testInd,6) < thresholdCategory);
+                        temp = spkPairComp(testInd(insigDiffInd),1:2);
+                        insigDiffIndGroup = unique(temp(:)); % sorted. Include tunedAngleInd, except when there's nothing
+
+                        if isempty(insigDiffIndGroup)
+                            unimodalSingleCell(i) = 1;
+                        else
+                            temp = spkPairComp(testInd(sigDiffInd),1:2);
+                            sigDiffIndGroup = setdiff(unique(temp(:)), tunedAngleInd); % exclude tunedAngleInd. Any index that is significantly different from the tuned angle index.
+
+                            broadInd = intersect(sigInd,insigDiffIndGroup);
+                            if length(broadInd) < 2
+                                unimodalSingleCell(i) = 1;
+                            else                            
+                                broadNum = 1;
+                                for tunei = tunedAngleInd-1:-1:1
+                                    if ismember(tunei, broadInd)
+                                        broadNum = broadNum + 1;
+                                    else 
+                                        break
+                                    end
+                                end
+                                for tunei = tunedAngleInd+1:length(angles)
+                                    if ismember(tunei, broadInd)
+                                        broadNum = broadNum + 1;
+                                    else
+                                        break
+                                    end
+                                end
+                                if broadNum == length(broadInd)
+                                    unimodalBroadCell(i) = 1;                                    
+                                else
+                                    multimodalCell(i) = 1;
+                                end
+                            end
+                        end
+                        
                     end
                 end
             end
@@ -335,6 +411,11 @@ for emi = 1:length(expertMi)
             anovaPAllCell(ci,:) = anovaPcell;
             tunedAllCell(ci,:) = tunedCell;
             tuneAngleAllCell(ci,:) = tuneAngleCell;
+            tuneModulationAllCell(ci,:) = tuneModulationCell;
+            tuneSharpnessAllCell(ci,:) = tuneSharpnessCell;
+            unimodalSingleAllCell(ci,:) = unimodalSingleCell;
+            unimodalBroadAllCell(ci,:) = unimodalBroadCell;
+            multimodalAllCell(ci,:) = multimodalCell;
         end
         
         save(savefn, '*AllCell')

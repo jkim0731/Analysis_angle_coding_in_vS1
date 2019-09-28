@@ -9,8 +9,8 @@ naiveInd = 1:length(mice);
 expertInd = find(cellfun(@length, sessions)==2);
 
 %%
-% for ni = 1 : length(naiveInd)
-  for ni = 6  
+for ni = 1 : length(naiveInd)
+%   for ni = 6  
     mouse = mice(naiveInd(ni));
     cd(sprintf('%s%03d',baseDir,mouse))
     session = sessions{naiveInd(ni)}(1);    
