@@ -34,7 +34,7 @@ for emi = 1:length(expertMi)
 %     for si = 1 : length(sessions{mi})
     for si = 2
         session = sessions{mi}(si);        
-        savefn = sprintf('angle_tuning_model_lasso_NC_JK%03dS%02d', mouse, session);
+        savefn = sprintf('angle_tuning_model_touchCell_NC_JK%03dS%02d', mouse, session);
         
         % load uber
         ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
