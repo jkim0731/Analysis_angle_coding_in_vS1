@@ -34,8 +34,8 @@ repeat = 10;
 devExp = struct;
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
-% glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R', mouse, session);
-glmfnBase = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R', mouse, session);
+glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R', mouse, session);
+% glmfnBase = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R', mouse, session);
 %% load uber
 cd(sprintf('%s%03d',baseDir, mouse))
 load(ufn, 'u') % loading u
@@ -65,7 +65,8 @@ end
 allDE = nan(numCells,1);
 partialDEsub = cell(numCells,1);
 corrVal = nan(numCells,1); 
-parfor ci = 1 : numCells
+% parfor ci = 1 : numCells
+for ci = 1074
     fprintf('Processing JK%03d S%02d %d/%d\n', mouse, session, ci, numCells)
     coeff = averageCoeff{ci};
     if ~isempty(coeff)
@@ -79,12 +80,12 @@ parfor ci = 1 : numCells
         dF = cell2mat(cellfun(@(x) [nan(1,posShift), x.dF(cindSpk,:), nan(1,posShift)], u.trials(tindCell)','uniformoutput',false));
 
         if length(testInput) ~= length(spkTest)
-            error('input matrix and spike length mismatch')
+            error('input matrix and spike length mismatch in ci %d', ci)
         end
 
         finiteIndTest = intersect(find(isfinite(spkTest)), find(isfinite(sum(testInput,2))));
         spkTest = spkTest(finiteIndTest);
-        dF = dF(finiteIndTest);
+        dF = dF(finiteIndTest); 
 
         coeff = averageCoeff{ci};
         model = exp([ones(length(finiteIndTest),1),testInput(finiteIndTest,:)]*coeff);
