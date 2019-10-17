@@ -18,7 +18,7 @@ baseDir = 'D:\TPM\JK\suite2p\';
 allEventRates = cell(1, length(mice));
 allNoise = cell(1, length(mice));
 
-load(sprintf('%sangle_tuning_summary_predecision_NC.mat',baseDir),'naive')
+load(sprintf('%sangle_tuning_summary_preAnswer_perTouch_NC.mat',baseDir),'naive')
 for mi = 1:length(mice)
     load(sprintf('%s%03d\\UberJK%03dS%02d_NC', baseDir, mice(mi), mice(mi), sessions{mi}(1)))
     fprintf('Processing %d/%d\n', mi, length(mice))
@@ -276,7 +276,7 @@ figure, hold on,
 for i = 1 : 2
     histogram(u.noise(cell2mat(indGroups(i,:))), noiseRange)
 end
-%% from all mice (naive)
+%% from all mice (naive), only within C2
 clear
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
@@ -289,18 +289,18 @@ numSamples = zeros(1,length(mice));
 numTouch = zeros(2,length(mice));
 numTuned = zeros(2,length(mice));
 depthThresh = 350;
-prctileThresh = 20; % percentile in either direction.
+prctileThresh = 40; % percentile in either direction.
 histRange = 0:0.01:0.3;
 numNoiseBins = 20;
 
-load(sprintf('%sangle_tuning_summary_predecision_NC.mat',baseDir),'naive')
+load(sprintf('%sangle_tuning_summary_preAnswer_perTouch_NC.mat',baseDir),'naive')
 for mi = 1:length(mice)
     load(sprintf('%s%03d\\UberJK%03dS%02d_NC', baseDir, mice(mi), mice(mi), sessions{mi}(1)))
     fprintf('Processing %d/%d\n', mi, length(mice))
     
     indAllCellLayers = cell(2,1);
-    indAllCellLayers{1} = find(u.cellDepths < depthThresh);
-    indAllCellLayers{2} = find(u.cellDepths >= depthThresh);
+    indAllCellLayers{1} = intersect(find(u.cellDepths < depthThresh), find(u.isC2));
+    indAllCellLayers{2} = intersect(find(u.cellDepths >= depthThresh), find(u.isC2));
 
     allNoiseDist{1,mi} = u.noise(indAllCellLayers{1});
     allNoiseDist{2,mi} = u.noise(indAllCellLayers{2});
@@ -403,6 +403,118 @@ xlabel('Noise')
 ylabel('Proportion')
 title('All neurons')
 set(gca,'fontsize',12,'fontname','Arial')
+
+
+%% from all mice (naive), only within C2, hard-threshold of noise level resulted from the above
+clear
+mice = [25,27,30,36,37,38,39,41,52,53,54,56];
+sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+baseDir = 'D:\TPM\JK\suite2p\';
+eventRatesLayers = cell(2, length(mice));
+allEventRatesLayers = cell(2, length(mice));
+noiseDist = cell(2, length(mice));
+allNoiseDist = cell(2, length(mice));
+numSamples = zeros(1,length(mice));
+numTouch = zeros(2,length(mice));
+numTuned = zeros(2,length(mice));
+depthThresh = 350;
+histRange = 0:0.01:0.3;
+numNoiseBins = 20;
+noiseThresh = [0.2, 0.6];
+
+load(sprintf('%sangle_tuning_summary_preAnswer_perTouch_NC.mat',baseDir),'naive')
+for mi = 1:length(mice)
+    load(sprintf('%s%03d\\UberJK%03dS%02d_NC', baseDir, mice(mi), mice(mi), sessions{mi}(1)))
+    fprintf('Processing %d/%d\n', mi, length(mice))
+    
+    indAllCellLayers = cell(2,1);
+    indAllCellLayers{1} = intersect(find(u.cellDepths < depthThresh), find(u.isC2));
+    indAllCellLayers{2} = intersect(find(u.cellDepths >= depthThresh), find(u.isC2));
+
+    allNoiseDist{1,mi} = u.noise(indAllCellLayers{1});
+    allNoiseDist{2,mi} = u.noise(indAllCellLayers{2});
+    
+    indCellNoise = intersect(find(u.noise > noiseThresh(1)), find(u.noise <= noiseThresh(2)));
+
+    indCellLayers = cell(2,1);
+    indCellLayers{1} = intersect(indCellNoise, indAllCellLayers{1});
+    indCellLayers{2} = intersect(indCellNoise, indAllCellLayers{2});
+
+    noiseRange = noiseThresh(1) : (noiseThresh(2) - noiseThresh(1)) / numNoiseBins : noiseThresh(2);
+    numSample = zeros(length(noiseRange)-1,1);
+    indNoiseLayers = cell(2,length(numSample));
+
+    for ni = 1 : length(numSample)
+        indNoiseLayers{1,ni} = indCellLayers{1}(intersect(find(u.noise(indCellLayers{1}) > noiseRange(ni)), find(u.noise(indCellLayers{1}) <= noiseRange(ni+1))));
+        indNoiseLayers{2,ni} = indCellLayers{2}(intersect(find(u.noise(indCellLayers{2}) > noiseRange(ni)), find(u.noise(indCellLayers{2}) <= noiseRange(ni+1))));
+        numSample(ni) = min(length(indNoiseLayers{1,ni}), length(indNoiseLayers{2,ni}));
+    end
+    numSampleInds = [0; cumsum(numSample)];
+    numSamples(mi) = sum(numSample);
+    for i = 1 : 2
+        eventRatesLayers{i,mi} = zeros(sum(numSample),1);
+        allEventRatesLayers{i,mi} = zeros(length(u.cellNums),1);
+        for j = 1 : length(u.cellNums)
+            tempCellId = u.cellNums(j);
+            indTrial = setdiff(find(cellfun(@(x) ~isempty(find(x.neuindSession == tempCellId)), u.trials)), find(cellfun(@(x) strcmp(x.trialType, 'oo'), u.trials)));
+            indCellSession = find(u.trials{indTrial(1)}.neuindSession == tempCellId);
+            indPlane = mod(tempCellId-1,4)+1;
+            poleUpFrames = cellfun(@(x) find(x.tpmTime{indPlane} >= x.poleUpTime(1) & x.tpmTime{indPlane} <= x.poleUpTime(end)), u.trials(indTrial), 'uniformoutput', false);
+            allSpikesPoleUp = cell2mat(cellfun(@(x,y) x.spk(indCellSession,y), u.trials(indTrial)', poleUpFrames', 'uniformoutput', false));
+
+            allEventRatesLayers{i,mi}(j) = sum(allSpikesPoleUp) / length(allSpikesPoleUp);
+        end
+        noiseDist{i,mi} = zeros(sum(numSample),1);
+        tempTouch = 0;
+        tempTuned = 0;
+        for ni = 1 : length(numSample)
+            tempIndGroup = indNoiseLayers{i,ni}(randperm(length(indNoiseLayers{i,ni}),numSample(ni)));
+            for j = 1  : length(tempIndGroup)
+                tempCellId = u.cellNums(tempIndGroup(j));
+                indTrial = setdiff(find(cellfun(@(x) ~isempty(find(x.neuindSession == tempCellId)), u.trials)), find(cellfun(@(x) strcmp(x.trialType, 'oo'), u.trials)));
+                indCellSession = find(u.trials{indTrial(1)}.neuindSession == tempCellId);
+                indPlane = mod(tempCellId-1,4)+1;
+                poleUpFrames = cellfun(@(x) find(x.tpmTime{indPlane} >= x.poleUpTime(1) & x.tpmTime{indPlane} <= x.poleUpTime(end)), u.trials(indTrial), 'uniformoutput', false);
+                allSpikesPoleUp = cell2mat(cellfun(@(x,y) x.spk(indCellSession,y), u.trials(indTrial)', poleUpFrames', 'uniformoutput', false));
+                
+                eventRatesLayers{i,mi}(numSampleInds(ni)+j) = sum(allSpikesPoleUp) / length(allSpikesPoleUp);
+                
+            end
+            noiseDist{i,mi}(numSampleInds(ni)+1:numSampleInds(ni+1)) = u.noise(tempIndGroup);
+            tempTouch = tempTouch + length(find(ismember(naive(mi).touchID, u.cellNums(tempIndGroup))));
+            tempTuned = tempTuned + length(find(ismember(naive(mi).touchID(find(naive(mi).tuned)), u.cellNums(tempIndGroup))));
+        end
+        numTouch(i,mi) = tempTouch;
+        numTuned(i,mi) = tempTuned;
+    end
+end
+%% Noise distribution comparison
+figure, hold on
+for mi = 1 : length(mice)
+    temp = histcounts(noiseDist{1,mi}, noiseRange);
+    plot(noiseRange(1:end-1), temp, 'k-')
+    temp = histcounts(noiseDist{2,mi}, noiseRange);
+    plot(noiseRange(1:end-1), temp, 'b-')
+end
+
+%%
+sampleInd = find(numSamples>=10);
+noiseRange = [0.2:0.01:0.6,1];
+noiseHist = zeros(length(sampleInd),length(noiseRange)-1,2);
+for mi = 1 : length(sampleInd)
+    noiseHist(mi,:,1) = histcounts(noiseDist{1,sampleInd(mi)}, noiseRange, 'normalization', 'probability');
+    noiseHist(mi,:,2) = histcounts(noiseDist{2,sampleInd(mi)}, noiseRange, 'normalization', 'probability');
+end
+figure, hold on
+errorbar(noiseRange(1:end-1), mean(squeeze(noiseHist(:,:,1))), std(squeeze(noiseHist(:,:,1)))/sqrt(length(sampleInd)))
+errorbar(noiseRange(1:end-1), mean(squeeze(noiseHist(:,:,2))), std(squeeze(noiseHist(:,:,2)))/sqrt(length(sampleInd)))
+legend({'L2/3','L4'})
+xlabel('Noise')
+ylabel('Proportion')
+title('Noise-matched')
+set(gca,'fontsize',12,'fontname','Arial')
+
+
 
 %% event rate distribution - noise matched
 histEventRatesLayers = zeros(2, length(mice), length(histRange)-1);

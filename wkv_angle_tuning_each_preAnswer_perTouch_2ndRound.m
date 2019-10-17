@@ -1,3 +1,10 @@
+% Second round to wkv model angle tuning reconstruction.
+% 3 features, dPhi, dKv, slide distance, selected from both removing and singe correlation
+% Including different combinations, based on the observation in the first pass 2019/10/04
+% Also considering other variables than the whisker variables
+% 2019/10/05 JK
+%%
+
 % Making spike matrix as in u, but from a model with removing selected whisker kinematic variables.
 % This is to show which variables are important in contructing angle tuning.
 % Only consider previously angle-tuned cells.
@@ -13,6 +20,8 @@
 % same as in angle_tuning_preAnswer_perTouch_spkOnly
 % Added some properties to be calculated. (type, modulation, sharpness)
 
+%% Basic settings
+clear
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
 % baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
@@ -33,65 +42,59 @@ anovactype = 'hsd';
 thresholdCategory = 0.05;
 
 %% target feature setting
-           
-%         total 27 sets for testing angle tuning
-%             1: inferred spikes
-%             2: touchGLM
-%             3: whiskerGLM
-%             4: all-maxDtheta
-%             5: all-maxDphi
-%             6: all-maxDkH
-%             7: all-maxDkV
-%             8: all-max(Slide distance)
-%             9: all-max(Touch duration)
-%             10: all-theta At Touch
-%             11: all-phi At Touch
-%             12: all-kH At Touch
-%             13: all-kV At Touch
-%             14: all-arc length At Touch
-%             15: all-touch counts
-%             16: maxDtheta only (no others included)
-%             17: maxDphi only (no others included)
-%             18: maxDkH only (no others included)
-%             19: maxDkV only (no others included)
-%             20: max(slide distance) only (no others included)
-%             21: max(touch duration) only (no others included)
-%             22: theta at touch only (no others included)
-%             23: phi at touch only (no others included)
-%             24: kH at touch only (no others included)
-%             25: kV at touch only (no others included)
-%             26: arc length at touch only (no others included)
-%             27: touch counts only (no others included)
-numFeature = 27;
-featureNames = {'spikes', ...
-    'touchModel', ...
-    'whiskerModel', ...
-    'all-maxDtheta', ...
-    'all-maxDphi', ...
-    'all-maxDkH', ...
-    'all-maxDkV', ...
-    'all-max(Slide distance)', ...
-    'all-max(Touch duration)', ...
-    'all-theta At Touch', ...
-    'all-phi At Touch', ...
-    'all-kV At Touch', ...
-    'all-kV At Touch', ...
-    'all-arc length At Touch', ...
-    'all-touch counts', ...
-    'maxDthetaOnly', ...
-    'maxDphiOnly', ...
-    'maxDkHOnly', ...
-    'maxDkVOnly',...
-    'max(slideDistance)Only',...
-    'max(touchDuration)Only',...
-    'thetaOnly',...
-    'phiOnly',...
-    'kHOnly',...
-    'kVOnly',...
-    'arcLengthOnly', ...
-    'touchCountsOnly'};
+%         total 25 sets for testing angle tuning
+%             1: without any whisker variable
+%             2: maxDtheta + other variables
+%             3: maxDphi + other variables
+%             4: maxDkH + other variables
+%             5: maxDkV + other variables
+%             6: max(Slide distance) + other variables
+%             7: max(duration) + other variables
+%             8: thetaAtTouch + other variables
+%             9: phiAtTouch + other variables
+%             10: kHAtTouch + other variables
+%             11: kVAtTouch + other variables
+%             12: arc length + other variables
+%             13: touch count + other variables
+%             14: -(maxDphi + maxDkV)
+%             15: -(maxDphi + max(Slide distance))
+%             16: -(maxDkV + max(Slide distance))
+%             17: -(maxDphi + maxDkV + max(Slide distance))
+%             18: dPhi + dKv
+%             19: dPhi + slide distance
+%             20: dKv + slide distance
+%             21: dPhi + dKv + slide distance
+%             22: (dPhi + dKv) + other
+%             23: (dPhi + slide distance) + other
+%             24: (dKv + slide distance) + other
+%             25: (maxDphi + maxDkV + max(Slide distance)) + other
+numFeature = 25;
+featureNames = {'noWhiskerVariable', ...
+    'maxDtheta+other', ...
+    'maxDphi+other', ...
+    'maxDkH+other', ...
+    'maxDkV+other', ...
+    'max(SlideDistance)+other', ...
+    'max(duration)+other', ...
+    'thetaAtTouch+other', ...
+    'phiAtTouch+other', ...
+    'kHAtTouch+other', ...
+    'kVAtTouch+other', ...
+    'arcLength+other', ...
+    'touchCount+other', ...
+    'all-(maxDphi+maxDkV)', ...
+    'all-(maxDphi+max(SlideDistance)', ...
+    'all-(maxDphi+max(SlideDistance)', ...
+    'all-(maxDphi+maxDkV+max(SlideDistance))', ...
+    'dPhi + dKv', ...
+    'dPhi + slide distance',...
+    'dKv + slide distance',...
+    'dPhi + dKv + slide distance',...
+    '(dPhi + dKv) + other',...
+    '(dPhi + slide distance) + other',...
+    '(dKv + slide distance) + other',...
+    '(maxDphi + maxDkV + max(Slide distance)) + other'};
 
-%%
 
 % naiveModelTune = struct;
 % expertModelTune = struct;
@@ -103,7 +106,7 @@ for mi = 1 : length(mice)
     for si = 1 : length(sessions{mi})
 %     for si = 2
         session = sessions{mi}(si);        
-        savefn = sprintf('angle_tuning_model_touchCell_NC_preAnswer_perTouch_JK%03dS%02d', mouse, session);
+        savefn = sprintf('angle_tuning_model_touchCell_NC_preAnswer_perTouch_JK%03dS%02d_2ndRound', mouse, session);
         
         % load uber
         ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
@@ -132,36 +135,13 @@ for mi = 1 : length(mice)
         % there are 8 NaNs between trials. first trial starts with 4 NaNs, and the last ends with 4 NaNs.
         allPredictorsWKV = cell(8,1);
         
-        % load touch glm results and get coefficients (for all active cells)
-        glmfn = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R10',mouse, session); % these are only from all active cells
-        load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors')
-        ap2 = allPredictors;
-        cIDAllTouch = cIDAll;
-        coeffs = zeros(length(fitCoeffs),length(fitCoeffs{1}),10);
-        for gi = 1 : 10
-            glmfn = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R%02d',mouse, session, gi); % these are only from touch response cells
-            load(glmfn, 'fitCoeffs')
-            emptyCoeffsInd = find(cellfun(@isempty, fitCoeffs));
-            firstNonemptyInd = find(1-cellfun(@isempty, fitCoeffs),1,'first');
-            if ~isempty(emptyCoeffsInd)
-                for emptyi = 1 : length(emptyCoeffsInd)                    
-                    fitCoeffs{emptyCoeffsInd(emptyi)} = nan(size(fitCoeffs{firstNonemptyInd}));
-                end
-            end
-            coeffs(:,:,gi) = cell2mat(fitCoeffs')';
-        end
-        meanCoeffsTouch = nanmean(coeffs,3);
-        % convert touch glm predictors back to each trial
-        allPredictorsTouch = cell(8,1);
         for i = 1 : 8
             if ~isempty(allPredictors{i}) % it can be empty in case of JK027 S09 and S10
                 naninds = find(isnan(allPredictors{i}(:,1)));
                 nanindChanges = find(diff(naninds)>1);
                 numTrials = length(nanindChanges);
-                allPredictorsTouch{i} = cell(numTrials,1);
                 allPredictorsWKV{i} = cell(numTrials,1);
                 for j = 1 : numTrials
-                    allPredictorsTouch{i}{j} = ap2{i}(naninds(nanindChanges(j))+1:naninds(nanindChanges(j)+1)-1,:);
                     allPredictorsWKV{i}{j} = ap1{i}(naninds(nanindChanges(j))+1:naninds(nanindChanges(j)+1)-1,:);
                 end
             end
@@ -179,14 +159,7 @@ for mi = 1 : length(mice)
             touchID = touchID';
         end
         
-%         total 15 sets for testing angle tuning
-%         (1) inferred spikes
-%         (2) full model with touch angle
-%         (3) full model with wkv
-%         (4-15) from wkv, remove each WKV        
-%         (16-27) from wkv model without any wkv, add each WKV
-%         First, align them all (model and dF), and align with baseline frames and touch frames for each corresponding trial
-%         Each in different planes
+
         
         % making templates
         % find preAnswer touch trials
@@ -251,9 +224,7 @@ for mi = 1 : length(mice)
             end
         end
         
-        
         % settings for variables to be saved later
-%         spkValAllCell = cell(length(touchID),17);
         spkValAllCell = cell(length(touchID),numFeature);
         anovaPAllCell = zeros(length(touchID),numFeature);
         tunedAllCell = zeros(length(touchID),numFeature);
@@ -281,84 +252,75 @@ for mi = 1 : length(mice)
             
             spkValAll = cell(1,numFeature);
             
-            % all spikes
-            cind = find(u.trials{trialInds(1)}.neuindSession == cellNum);
-            tempSpk = cellfun(@(x) x.spk(cind,:), u.trials(trialInds), 'uniformoutput', false);
-            spkValAll{1} = cell(length(angles),1);
-            for ai = 1 : length(angles)
-                trialAngleInd = angleInds{ai};               
-                spkValAll{1}{ai} = zeros(length(trialAngleInd),1);
-                for ti = 1 : length(trialAngleInd)
-                    tempInd = trialAngleInd(ti);                    
-                    spkValAll{1}{ai}(ti) = sum( tempSpk{tempInd}(spkTouchFrames{tempInd}) - mean(tempSpk{tempInd}(baselineFrames{tempInd})) ) / numTouch(tempInd);
-                    % Delta inferred spike per touch 2019/09/27
-                end
-            end
-            
-            % from full touch glm (#2)
-            coeffInd = find(cIDAllTouch == cellNum);
-            spkValAll{2} = cell(length(angles),1);
-            for ai = 1 : length(angles)
-                trialAngleInd = modelTouchAngleInds{ai};
-                spkValAll{2}{ai} = zeros(length(trialAngleInd),1);
-                for ti = 1 : length(trialAngleInd)
-                    tempInd = trialAngleInd(ti); % index of allPredictorsTouch
-                    tempPredictor = allPredictorsTouch{plane}{tempInd};
-                    tempLength = size(tempPredictor,1);
-                    tempInput = [ones(tempLength,1), tempPredictor];
-                    tempCoeff = meanCoeffsTouch(coeffInd,:);
-                    model = exp(tempInput*tempCoeff');
-                    
-                    tempUInd = find(cellfun(@(x) ismember(plane, x.planes), u.trials));
-                    uInd = tempUInd(tempInd);
-                    matchingInd = find(trialInds == uInd);
-                    spkValAll{2}{ai}(ti) = sum( model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd})) ) / numTouch(matchingInd);
-                end
-            end
-            
             % whiskerTouchMat = [maxDthetaMat, maxDphiMat, maxDkappaHMat, maxDkappaVMat, maxSlideDistanceMat, maxDurationMat, ...    
 %                             thetaAtTouchMat, phiAtTouchMat, kappaHAtTouchMat, kappaVAtTouchMat, arcLengthAtTouchMat, touchCountMat];
-
-            % from full wkv glm (#3 ~ #15), removeOne
-            coeffInd = find(cIDAllWKV == cellNum);
-            inds = cell(numFeature-2,1);
-            coeffLength = size(meanCoeffsWKV,2);
-            inds{1} = 1:coeffLength;
-            inds{2} = setdiff(1:coeffLength, 2:4); % maxDthetaMat
-            inds{3} = setdiff(1:coeffLength, 5:7); % maxDphiMat
-            inds{4} = setdiff(1:coeffLength, 8:10); % maxDkappaHMat
-            inds{5} = setdiff(1:coeffLength, 11:13); % maxDkappaVMat
-            inds{6} = setdiff(1:coeffLength, 14:16); % maxSlideDistanceMat
-            inds{7} = setdiff(1:coeffLength, 17:19); % maxDurationMat
-            inds{8} = setdiff(1:coeffLength, 20:22); % thetaAtTouchMat
-            inds{9} = setdiff(1:coeffLength, 23:25); % phiAtTouchMat
-            inds{10} = setdiff(1:coeffLength, 26:28); % kappaHAtTouchMat
-            inds{11} = setdiff(1:coeffLength, 29:31); % kappaVAtTouchMat
-            inds{12} = setdiff(1:coeffLength, 32:34); % arcLengthAtTouchMat
-            inds{13} = setdiff(1:coeffLength, 35:37); % touchCountMat
             
-            inds{14} = [1,2:4];
-            inds{15} = [1,5:7];
-            inds{16} = [1,8:10];
-            inds{17} = [1,11:13];
-            inds{18} = [1,14:16];
-            inds{19} = [1,17:19];
-            inds{20} = [1,20:22];
-            inds{21} = [1,23:25];
-            inds{22} = [1,26:28];
-            inds{23} = [1,29:31];
-            inds{24} = [1,32:34];
-            inds{25} = [1,35:37];
+%             1: without any whisker variable
+%             2: maxDtheta + other variables
+%             3: maxDphi + other variables
+%             4: maxDkH + other variables
+%             5: maxDkV + other variables
+%             6: max(Slide distance) + other variables
+%             7: max(duration) + other variables
+%             8: thetaAtTouch + other variables
+%             9: phiAtTouch + other variables
+%             10: kHAtTouch + other variables
+%             11: kVAtTouch + other variables
+%             12: arc length + other variables
+%             13: touch count + other variables
+%             14: -(maxDphi + maxDkV)
+%             15: -(maxDphi + max(Slide distance))
+%             16: -(maxDkV + max(Slide distance))
+%             17: -(maxDphi + maxDkV + max(Slide distance))
+%             18: dPhi + dKv
+%             19: dPhi + slide distance
+%             20: dKv + slide distance
+%             21: dPhi + dKv + slide distance
+%             22: (dPhi + dKv) + other
+%             23: (dPhi + slide distance) + other
+%             24: (dKv + slide distance) + other
+%             25: (maxDphi + maxDkV + max(Slide distance)) + other
 
-            for i = 3 : numFeature
+            coeffInd = find(cIDAllWKV == cellNum);
+            inds = cell(numFeature,1);
+            coeffLength = size(meanCoeffsWKV,2);
+            
+            inds{1} = setdiff(1:coeffLength, 2:37); % without any whisker variable
+            inds{2} = [1,2:4, 38:coeffLength]; % maxDtheta + other variables
+            inds{3} = [1,5:7, 38:coeffLength]; % maxDphi + other variables
+            inds{4} = [1,8:10, 38:coeffLength]; % maxDkH + other variables
+            inds{5} = [1,11:13, 38:coeffLength]; % maxDkV + other variables
+            inds{6} = [1,14:16, 38:coeffLength]; % max(Slide distance) + other variables
+            inds{7} = [1,17:19, 38:coeffLength]; % max(duration) + other variables
+            inds{8} = [1,20:22, 38:coeffLength]; % thetaAtTouch + other variables
+            inds{9} = [1,23:25, 38:coeffLength]; % phiAtTouch + other variables
+            inds{10} = [1,26:28, 38:coeffLength]; % kHAtTouch + other variables
+            inds{11} = [1,29:31, 38:coeffLength]; % kVAtTouch + other variables
+            inds{12} = [1,32:34, 38:coeffLength]; % arc length + other variables
+            inds{13} = [1,35:37, 38:coeffLength]; % touch count + other variables
+            
+            inds{14} = setdiff(1:coeffLength, [5:7, 11:13]); % -(dPhi + dKv)
+            inds{15} = setdiff(1:coeffLength, [5:7, 14:16]); % -(dPhi + slide distance)
+            inds{16} = setdiff(1:coeffLength, [11:13, 14:16]); % -(dKv + slide distance)
+            inds{17} = setdiff(1:coeffLength, [5:7, 11:13, 14:16]); % - (maxDphi + maxDkV + max(Slide distance))
+            
+            inds{18} = [1, 5:7, 11:13]; % (maxDphi + maxDkV)
+            inds{19} = [1, 5:7, 14:16]; % (maxDphi + max(Slide distance))
+            inds{20} = [1, 11:13, 14:16]; % (maxDkV + max(Slide distance))
+            inds{21} = [1, 5:7, 11:13, 14:16]; % (maxDphi + maxDkV + max(Slide distance))
+            
+            inds{22} = [1, 5:7, 11:13, 38:coeffLength]; % (dPhi + dKv) + other
+            inds{23} = [1, 5:7, 14:16, 38:coeffLength]; % (dPhi + max(Slide distance)) + other
+            inds{24} = [1, 11:13, 14:16, 38:coeffLength]; % (dKv + max(Slide distance)) + other
+            inds{25} = [1, 5:7, 11:13, 14:16, 38:coeffLength]; % (maxDphi + maxDkV + max(Slide distance)) + other
+            
+            for i = 1 : numFeature
                 spkValAll{i} = cell(length(angles),1);
             end
             
-            
-            
             for ai = 1 : length(angles)
                 trialAngleInd = modelTouchAngleInds{ai};
-                for i = 3 : numFeature
+                for i = 1 : numFeature
                     spkValAll{i}{ai} = zeros(length(trialAngleInd),1);
                 end
                 for ti = 1 : length(trialAngleInd)
@@ -372,9 +334,9 @@ for mi = 1 : length(mice)
                     uInd = tempUInd(tempInd);
                     matchingInd = find(trialInds == uInd);
                     
-                    for i = 1 : numFeature-2
+                    for i = 1 : numFeature
                         model = exp(tempInput(:,inds{i})*tempCoeff(inds{i})');
-                        spkValAll{i+2}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);                        
+                        spkValAll{i}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);                        
                     end
                 end
             end
@@ -478,7 +440,7 @@ for mi = 1 : length(mice)
             multimodalAllCell(ci,:) = multimodalCell;
         end
         
-        save(savefn, '*AllCell')
+        save(savefn, '*AllCell', 'featureNames')
 %         if si == 2
 %             glmi = find(expertMi == mi);
 %             expertModelTune(glmi).spkValAllCell = spkValAllCell;

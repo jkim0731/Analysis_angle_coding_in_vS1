@@ -254,9 +254,9 @@ for mi = 1 : 8
             inds{38} = setdiff(1:coeffLength, indPartial{5}+1); % removing licking
             
             inds{39} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{2})+1); % removing whisker + sound
-            inds{40} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{3})+1); % removing whisker + sound
-            inds{41} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{4})+1); % removing whisker + sound
-            inds{42} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{5})+1); % removing whisker + sound
+            inds{40} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{3})+1); % removing whisker + reward
+            inds{41} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{4})+1); % removing whisker + whisking
+            inds{42} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{5})+1); % removing whisker + licking
             
             
         % angle tuning in each cell
