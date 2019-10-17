@@ -1,17 +1,5 @@
-% Modified from wkv_angle_tuning_each_preLick_perTouch
-% There's still some left effects of licking for angle tuning, possibly because of negShift of lick parameters
-% Consider this in this test
+% 3rd round. Licking effects on experts. Remove licks for baseline angle tuning correlation
 % 2019/10/17 JK
-
-% Modified from wkv_angle_tuning_each_preAnswer_perTouch_spkOnly
-% Consider pre-first lick, instead of pre-answer
-% It is because of high correlation between lick and angle in expert mice
-
-% Also, combine all combinations from preAnswer tests (include 2ndRound)
-% Finally, include combinations of different categories (removing sound, reward,
-% whisking, and licking, and combinations of them)
-% 2019/10/16 JK
-
 
 % Making spike matrix as in u, but from a model with removing selected whisker kinematic variables.
 % This is to show which variables are important in contructing angle tuning.
@@ -47,19 +35,18 @@ thresholdPermutation = 0.05;
 anovactype = 'hsd';
 thresholdCategory = 0.05;
 
-expertMi = find(cellfun(@length, sessions) == 2);
 % naiveModelTune = struct;
 % expertModelTune = struct;
-% for mi = 1 : length(mice)
+for mi = 1 : length(mice)
 % for mi = 1 : 8
-for emi = 1:length(expertMi)
-    mi = expertMi(emi);
+% for emi = 1:length(expertMi)
+%     mi = expertMi(emi);
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
     for si = 1 : length(sessions{mi})
 %     for si = 2
         session = sessions{mi}(si);        
-        savefn = sprintf('angle_tuning_model_touchCell_NC_preLick_negShift_perTouch_JK%03dS%02d', mouse, session);
+        savefn = sprintf('angle_tuning_model_touchCell_NC_preAnswer_perTouch_JK%03dS%02d_3rdRound', mouse, session);
         
         % load uber
         ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
@@ -67,7 +54,7 @@ for emi = 1:length(expertMi)
         
         % load wkv glm results and get coefficients (for all touch cells)
         glmfn = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R10',mouse, session); % these are only from touch response cells
-        load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors', 'indPartial', 'negShift')
+        load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors', 'indPartial')
         ap1 = allPredictors;
         cIDAllWKV = cIDAll;        
         coeffs = zeros(length(fitCoeffs),length(fitCoeffs{1}),10);
@@ -143,25 +130,24 @@ for emi = 1:length(expertMi)
         
         % making templates
         % find preAnswer touch trials
-        firstLickTime = cell(length(u.trials),1);
-        allLicks = cellfun(@(x) union(union(union(x.leftLickTime, x.rightLickTime), x.answerLickTime), x.poleDownOnsetTime), u.trials, 'un', 0);
-        lickIndsAfterPoleIn = cellfun(@(x,y) find(x>y.poleUpOnsetTime,1), allLicks, u.trials);
-        % poleUpTime(1) should be better, but there is almost no
-        % difference in the result, and it's hard to deal with catch trials
-        % 2019/10/16 JK
-        for licki = 1 : length(firstLickTime)
-            firstLickTime{licki} = allLicks{licki}(lickIndsAfterPoleIn(licki));
+        answerTime = cell(length(u.trials),1);
+        for di = 1 : length(answerTime)
+            if isempty(u.trials{di}.answerLickTime)
+                answerTime{di} = u.trials{di}.poleDownOnsetTime;
+            else
+                answerTime{di} = u.trials{di}.answerLickTime;
+            end
         end
         tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
-        plTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), firstLickTime(tempTouchTrialInd)));
-        touchTrialInd = tempTouchTrialInd(plTouchInd); % index of u
+        paTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), answerTime(tempTouchTrialInd)));
+        touchTrialInd = tempTouchTrialInd(paTouchInd); % index of u
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
         planeTrialsNum = cell(numPlane,1);
         poleUpFrames = cell(numPlane,1);
         beforePoleUpFrames = cell(numPlane,1);
         touchFrames = cell(numPlane,1);
-        numTouchPreLick = cell(numPlane,1);
+        numTouchPreAnswer = cell(numPlane,1);
         angleTrialInds = cell(numPlane,1);
         for pi = 1 : numPlane
             planeTrialsInd{pi} = intersect(find(cellfun(@(x) ismember(pi, x.planes), u.trials)), touchTrialInd); % index of u
@@ -169,22 +155,21 @@ for emi = 1:length(expertMi)
             poleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} >= x.poleUpTime(1) & x.tpmTime{tempInd} <= x.poleUpTime(end)), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
             beforePoleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} < x.poleUpOnsetTime), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
             touchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
-            numTouchPreLick{pi} = zeros(length(planeTrialsInd{pi}),1);
+            numTouchPreAnswer{pi} = zeros(length(planeTrialsInd{pi}),1);
             for ti = 1 : length(planeTrialsInd{pi})
                 tempTrial = u.trials{planeTrialsInd{pi}(ti)};
-                tempLickTime = firstLickTime{planeTrialsInd{pi}(ti)};
-                preLickInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)-negShift) < tempLickTime, tempTrial.protractionTouchChunksByWhisking));
-                if ~isempty(preLickInd)
-                    tempFrames = cell(1, length(preLickInd));
-                    for ptci = 1 : length(tempFrames)
-                        tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
-                    end
-                    touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
-                    numTouchPreLick{pi}(ti) = length(preLickInd);
+                if isempty(tempTrial.answerLickTime)
+                    tempAnswerTime = tempTrial.poleDownOnsetTime;
                 else
-                    touchFrames{pi}{ti} = [];
-                    numTouchPreLick{pi}(ti) = 0;
+                    tempAnswerTime = tempTrial.answerLickTime;
                 end
+                preAnswerInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempAnswerTime, tempTrial.protractionTouchChunksByWhisking));
+                tempFrames = cell(1, length(preAnswerInd));
+                for ptci = 1 : length(tempFrames)
+                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
+                end
+                touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
+                numTouchPreAnswer{pi}(ti) = length(preAnswerInd);
             end
             angleTrialInds{pi} = cell(length(angles),1); % index of planeTrialsInd{pi}
             for ai = 1 : length(angles)
@@ -207,18 +192,18 @@ for emi = 1:length(expertMi)
         end
         
         % settings for variables to be saved later
-        spkValAllCell = cell(length(touchID),44);
-        anovaPAllCell = zeros(length(touchID),44);
-        tunedAllCell = zeros(length(touchID),44);
-        tuneAngleAllCell = zeros(length(touchID),44);
-        tuneModulationAllCell = zeros(length(touchID), 44);
-        tuneSharpnessAllCell = zeros(length(touchID),44);
-        unimodalSingleAllCell = zeros(length(touchID),44);
-        unimodalBroadAllCell = zeros(length(touchID),44);
-        multimodalAllCell = zeros(length(touchID),44);
+        spkValAllCell = cell(length(touchID),36);
+        anovaPAllCell = zeros(length(touchID),36);
+        tunedAllCell = zeros(length(touchID),36);
+        tuneAngleAllCell = zeros(length(touchID),36);
+        tuneModulationAllCell = zeros(length(touchID), 36);
+        tuneSharpnessAllCell = zeros(length(touchID),36);
+        unimodalSingleAllCell = zeros(length(touchID),36);
+        unimodalBroadAllCell = zeros(length(touchID),36);
+        multimodalAllCell = zeros(length(touchID),36);
             
-        inds = cell(42,1);
-            coeffLength = size(meanCoeffsWKV,2);
+        inds = cell(34,1);
+            coeffLength = size(meanCoeffsWKV,2) - length(indPartial{5}); % removing licking coefficients. It's the last one, so I can just subtract the length.
             inds{1} = 1:coeffLength;
             inds{2} = setdiff(1:coeffLength, 2:4); % maxDthetaMat
             inds{3} = setdiff(1:coeffLength, 5:7); % maxDphiMat
@@ -258,15 +243,15 @@ for emi = 1:length(expertMi)
             inds{33} = [1,11:13,14:16, 38:coeffLength]; % adding combinations to the no whisker model (maxDkV + max(slide distance))
             inds{34} = [1,5:7,11:13,14:16, 38:coeffLength]; % adding combinations to the no whisker model (all three)
 
-            inds{35} = setdiff(1:coeffLength, indPartial{2}+1); % removing sound
-            inds{36} = setdiff(1:coeffLength, indPartial{3}+1); % removing reward
-            inds{37} = setdiff(1:coeffLength, indPartial{4}+1); % removing whisking
-            inds{38} = setdiff(1:coeffLength, indPartial{5}+1); % removing licking
+%             inds{35} = setdiff(1:coeffLength, indPartial{2}+1); % removing sound
+%             inds{36} = setdiff(1:coeffLength, indPartial{3}+1); % removing reward
+%             inds{37} = setdiff(1:coeffLength, indPartial{4}+1); % removing whisking
+%             inds{38} = setdiff(1:coeffLength, indPartial{5}+1); % removing licking
             
-            inds{39} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{2})+1); % removing whisker + sound
-            inds{40} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{3})+1); % removing whisker + sound
-            inds{41} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{4})+1); % removing whisker + sound
-            inds{42} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{5})+1); % removing whisker + sound
+%             inds{39} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{2})+1); % removing whisker + sound
+%             inds{40} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{3})+1); % removing whisker + sound
+%             inds{41} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{4})+1); % removing whisker + sound
+%             inds{42} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{5})+1); % removing whisker + sound
             
             
         % angle tuning in each cell
@@ -284,7 +269,7 @@ for emi = 1:length(expertMi)
             modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & allPredictorsWKV
             numTouch = numTouchPreLick{plane};
             
-            spkValAll = cell(1,44);
+            spkValAll = cell(1,36);
             
             % all spikes
             cind = find(u.trials{trialInds(1)}.neuindSession == cellNum);
@@ -296,9 +281,6 @@ for emi = 1:length(expertMi)
                 for ti = 1 : length(trialAngleInd)
                     tempInd = trialAngleInd(ti);                    
                     spkValAll{1}{ai}(ti) = sum( tempSpk{tempInd}(spkTouchFrames{tempInd}) - mean(tempSpk{tempInd}(baselineFrames{tempInd})) ) / numTouch(tempInd);
-                    if isempty(spkValAll{1}{ai}(ti))
-                        spkValAll{1}{ai}(ti) = NaN;
-                    end
                     % Delta inferred spike per touch 2019/09/27
                 end
             end
@@ -321,9 +303,6 @@ for emi = 1:length(expertMi)
                     uInd = tempUInd(tempInd);
                     matchingInd = find(trialInds == uInd);
                     spkValAll{2}{ai}(ti) = sum( model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd})) ) / numTouch(matchingInd);
-                    if isempty(spkValAll{2}{ai}(ti))
-                        spkValAll{2}{ai}(ti) = NaN;
-                    end
                 end
             end
             
@@ -335,17 +314,16 @@ for emi = 1:length(expertMi)
             % #17~#28: add each one to no-whisker model
             % #29~#32: remove combinations of dphi, dKv, and slide distance
             % #33~#36: add combinations of dphi, dKv, and slide distance to no-whisker model
-            % #37~#40: remove each category of inputs,
-            % #41~#44: remove combination of categories with whisker
+
             coeffInd = find(cIDAllWKV == cellNum);
             
-            for i = 3 : 44
+            for i = 3 : 36
                 spkValAll{i} = cell(length(angles),1);
             end
             
             for ai = 1 : length(angles)
                 trialAngleInd = modelTouchAngleInds{ai};
-                for i = 3 : 44
+                for i = 3 : 36
                     spkValAll{i}{ai} = zeros(length(trialAngleInd),1);
                 end
                 for ti = 1 : length(trialAngleInd)
@@ -359,26 +337,23 @@ for emi = 1:length(expertMi)
                     uInd = tempUInd(tempInd);
                     matchingInd = find(trialInds == uInd);
                     
-                    for i = 1 : 42
+                    for i = 1 : 34
                         model = exp(tempInput(:,inds{i})*tempCoeff(inds{i})');
-                        spkValAll{i+2}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);
-                        if isempty(spkValAll{i+2}{ai}(ti))
-                            spkValAll{i+2}{ai}(ti) = NaN;
-                        end
+                        spkValAll{i+2}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);                        
                     end
                 end
             end
             
             
             % ANOVA in each configuration            
-            anovaPcell = zeros(1,44);
-            tunedCell = zeros(1,44);
-            tuneAngleCell = nan(1,44);
-            tuneModulationCell = zeros(1,44);
-            tuneSharpnessCell = zeros(1,44);
-            unimodalSingleCell = zeros(1,44);
-            unimodalBroadCell = zeros(1,44);
-            multimodalCell = zeros(1,44);
+            anovaPcell = zeros(1,36);
+            tunedCell = zeros(1,36);
+            tuneAngleCell = nan(1,36);
+            tuneModulationCell = zeros(1,36);
+            tuneSharpnessCell = zeros(1,36);
+            unimodalSingleCell = zeros(1,36);
+            unimodalBroadCell = zeros(1,36);
+            multimodalCell = zeros(1,36);
             
             anovaVal = cell2mat(spkValAll{1});
             groupAnova = zeros(size(anovaVal));
