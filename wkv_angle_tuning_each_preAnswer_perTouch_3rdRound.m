@@ -267,7 +267,7 @@ for mi = 1 : length(mice)
             baselineFrames = beforePoleUpFrames{plane};
             angleInds = angleTrialInds{plane}; % index of trialInds            
             modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & allPredictorsWKV
-            numTouch = numTouchPreLick{plane};
+            numTouch = numTouchPreAnswer{plane};
             
             spkValAll = cell(1,36);
             
