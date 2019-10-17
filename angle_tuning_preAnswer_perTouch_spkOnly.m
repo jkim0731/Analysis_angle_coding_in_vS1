@@ -37,8 +37,8 @@
 %%
 % settings
 clear
-% baseDir = 'Y:\Whiskernas\JK\suite2p\';
-baseDir = 'D:\TPM\JK\suite2p\';
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
+% baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 % sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
@@ -84,8 +84,8 @@ for mi = 1 : length(mice)
                 answerTime{di} = u.trials{di}.answerLickTime;
             end
         end
-        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunks), u.trials));
-        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunks{1}(1)) < y, u.trials(tempTouchTrialInd), answerTime(tempTouchTrialInd)));
+        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
+        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), answerTime(tempTouchTrialInd)));
         touchTrialInd = tempTouchTrialInd(pdTouchInd);
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
@@ -114,12 +114,12 @@ for mi = 1 : length(mice)
                 else
                     tempAnswerTime = tempTrial.answerLickTime;
                 end
-                preAnswerInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempAnswerTime, tempTrial.protractionTouchChunks));
+                preAnswerInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempAnswerTime, tempTrial.protractionTouchChunksByWhisking));
                 
                 tempFrames = cell(1, length(preAnswerInd));
                 
                 for ptci = 1 : length(tempFrames)
-                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
+                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
                     % tpmTime is the beginning timepoint of each frame from the trial start point (TTL1 signal). 
                     % Considering Ca2+ and GCaMP signal rise time, any event should be assigned to frames having the time point >= to that event timing.
                     % (ref, C:\Users\shires\Documents\GitHub\jksbx\+Calcium\@CalciumDataArray\CalciumDataArray.m)
