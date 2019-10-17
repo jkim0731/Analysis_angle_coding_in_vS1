@@ -45,7 +45,8 @@ thresholdCategory = 0.05;
 
 % naiveModelTune = struct;
 % expertModelTune = struct;
-for mi = 1 : length(mice)
+% for mi = 1 : length(mice)
+for mi = 1 : 8
 % for emi = 1:length(expertMi)
 %     mi = expertMi(emi);
     mouse = mice(mi);
@@ -206,6 +207,58 @@ for mi = 1 : length(mice)
         unimodalBroadAllCell = zeros(length(touchID),44);
         multimodalAllCell = zeros(length(touchID),44);
             
+        inds = cell(42,1);
+            coeffLength = size(meanCoeffsWKV,2);
+            inds{1} = 1:coeffLength;
+            inds{2} = setdiff(1:coeffLength, 2:4); % maxDthetaMat
+            inds{3} = setdiff(1:coeffLength, 5:7); % maxDphiMat
+            inds{4} = setdiff(1:coeffLength, 8:10); % maxDkappaHMat
+            inds{5} = setdiff(1:coeffLength, 11:13); % maxDkappaVMat
+            inds{6} = setdiff(1:coeffLength, 14:16); % maxSlideDistanceMat
+            inds{7} = setdiff(1:coeffLength, 17:19); % maxDurationMat
+            inds{8} = setdiff(1:coeffLength, 20:22); % thetaAtTouchMat
+            inds{9} = setdiff(1:coeffLength, 23:25); % phiAtTouchMat
+            inds{10} = setdiff(1:coeffLength, 26:28); % kappaHAtTouchMat
+            inds{11} = setdiff(1:coeffLength, 29:31); % kappaVAtTouchMat
+            inds{12} = setdiff(1:coeffLength, 32:34); % arcLengthAtTouchMat
+            inds{13} = setdiff(1:coeffLength, 35:37); % touchCountMat
+            
+            inds{14} = setdiff(1:coeffLength, 2:37); % no whisker model
+            
+            inds{15} = [1,2:4, 38:coeffLength]; % adding maxDthetaMat to no whisker model
+            inds{16} = [1,5:7, 38:coeffLength]; % adding maxDphiMat to no whisker model
+            inds{17} = [1,8:10, 38:coeffLength]; % adding maxDkappaHMat to no whisker model
+            inds{18} = [1,11:13, 38:coeffLength]; % adding maxDkappaVMat to no whisker model
+            inds{19} = [1,14:16, 38:coeffLength]; % adding maxSlideDistanceMat to no whisker model
+            inds{20} = [1,17:19, 38:coeffLength]; % adding maxDthmaxDurationMatetaMat to no whisker model
+            inds{21} = [1,20:22, 38:coeffLength]; % adding thetaAtTouchMat to no whisker model
+            inds{22} = [1,23:25, 38:coeffLength]; % adding phiAtTouchMat to no whisker model
+            inds{23} = [1,26:28, 38:coeffLength]; % adding kappaHAtTouchMat to no whisker model
+            inds{24} = [1,29:31, 38:coeffLength]; % adding kappaVAtTouchMat to no whisker model
+            inds{25} = [1,32:34, 38:coeffLength]; % adding arcLengthAtTouchMat to no whisker model
+            inds{26} = [1,35:37, 38:coeffLength]; % adding touchCountMat to no whisker model
+            
+            inds{27} = setdiff(1:coeffLength, [5:7, 11:13]); % removing combinations (maxDPhi + maxDKv)
+            inds{28} = setdiff(1:coeffLength, [5:7, 14:16]); % removing combinations (maxDPhi + max(slideDistance))
+            inds{29} = setdiff(1:coeffLength, [11:13, 14:16]); % removing combinations (maxDkV + max(slide distance))
+            inds{30} = setdiff(1:coeffLength, [5:7, 11:13, 14:16]); % removing combinations (all three)
+            
+            inds{31} = [1,5:7,11:13, 38:coeffLength]; % adding combinations to the no whisker model (maxDPhi + maxDKv)
+            inds{32} = [1,5:7,14:16, 38:coeffLength]; % adding combinations to the no whisker model (maxDPhi + max(slideDistance))
+            inds{33} = [1,11:13,14:16, 38:coeffLength]; % adding combinations to the no whisker model (maxDkV + max(slide distance))
+            inds{34} = [1,5:7,11:13,14:16, 38:coeffLength]; % adding combinations to the no whisker model (all three)
+
+            inds{35} = setdiff(1:coeffLength, indPartial{2}+1); % removing sound
+            inds{36} = setdiff(1:coeffLength, indPartial{3}+1); % removing reward
+            inds{37} = setdiff(1:coeffLength, indPartial{4}+1); % removing whisking
+            inds{38} = setdiff(1:coeffLength, indPartial{5}+1); % removing licking
+            
+            inds{39} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{2})+1); % removing whisker + sound
+            inds{40} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{3})+1); % removing whisker + sound
+            inds{41} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{4})+1); % removing whisker + sound
+            inds{42} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{5})+1); % removing whisker + sound
+            
+            
         % angle tuning in each cell
         parfor ci = 1:length(touchID)
 %         for ci = 1:length(touchID)
@@ -269,56 +322,6 @@ for mi = 1 : length(mice)
             % #37~#40: remove each category of inputs,
             % #41~#44: remove combination of categories with whisker
             coeffInd = find(cIDAllWKV == cellNum);
-            inds = cell(42,1);
-            coeffLength = size(meanCoeffsWKV,2);
-            inds{1} = 1:coeffLength;
-            inds{2} = setdiff(1:coeffLength, 2:4); % maxDthetaMat
-            inds{3} = setdiff(1:coeffLength, 5:7); % maxDphiMat
-            inds{4} = setdiff(1:coeffLength, 8:10); % maxDkappaHMat
-            inds{5} = setdiff(1:coeffLength, 11:13); % maxDkappaVMat
-            inds{6} = setdiff(1:coeffLength, 14:16); % maxSlideDistanceMat
-            inds{7} = setdiff(1:coeffLength, 17:19); % maxDurationMat
-            inds{8} = setdiff(1:coeffLength, 20:22); % thetaAtTouchMat
-            inds{9} = setdiff(1:coeffLength, 23:25); % phiAtTouchMat
-            inds{10} = setdiff(1:coeffLength, 26:28); % kappaHAtTouchMat
-            inds{11} = setdiff(1:coeffLength, 29:31); % kappaVAtTouchMat
-            inds{12} = setdiff(1:coeffLength, 32:34); % arcLengthAtTouchMat
-            inds{13} = setdiff(1:coeffLength, 35:37); % touchCountMat
-            
-            inds{14} = setdiff(1:coeffLength, 2:37); % no whisker model
-            
-            inds{15} = [1,2:4, 38:coeffLength]; % adding maxDthetaMat to no whisker model
-            inds{16} = [1,5:7, 38:coeffLength]; % adding maxDphiMat to no whisker model
-            inds{17} = [1,8:10, 38:coeffLength]; % adding maxDkappaHMat to no whisker model
-            inds{18} = [1,11:13, 38:coeffLength]; % adding maxDkappaVMat to no whisker model
-            inds{19} = [1,14:16, 38:coeffLength]; % adding maxSlideDistanceMat to no whisker model
-            inds{20} = [1,17:19, 38:coeffLength]; % adding maxDthmaxDurationMatetaMat to no whisker model
-            inds{21} = [1,20:22, 38:coeffLength]; % adding thetaAtTouchMat to no whisker model
-            inds{22} = [1,23:25, 38:coeffLength]; % adding phiAtTouchMat to no whisker model
-            inds{23} = [1,26:28, 38:coeffLength]; % adding kappaHAtTouchMat to no whisker model
-            inds{24} = [1,29:31, 38:coeffLength]; % adding kappaVAtTouchMat to no whisker model
-            inds{25} = [1,32:34, 38:coeffLength]; % adding arcLengthAtTouchMat to no whisker model
-            inds{26} = [1,35:37, 38:coeffLength]; % adding touchCountMat to no whisker model
-            
-            inds{27} = setdiff(1:coeffLength, [5:7, 11:13]); % removing combinations (maxDPhi + maxDKv)
-            inds{28} = setdiff(1:coeffLength, [5:7, 14:16]); % removing combinations (maxDPhi + max(slideDistance))
-            inds{29} = setdiff(1:coeffLength, [11:13, 14:16]); % removing combinations (maxDkV + max(slide distance))
-            inds{30} = setdiff(1:coeffLength, [5:7, 11:13, 14:16]); % removing combinations (all three)
-            
-            inds{31} = [1,5:7,11:13, 38:coeffLength]; % adding combinations to the no whisker model (maxDPhi + maxDKv)
-            inds{32} = [1,5:7,14:16, 38:coeffLength]; % adding combinations to the no whisker model (maxDPhi + max(slideDistance))
-            inds{33} = [1,11:13,14:16, 38:coeffLength]; % adding combinations to the no whisker model (maxDkV + max(slide distance))
-            inds{34} = [1,5:7,11:13,14:16, 38:coeffLength]; % adding combinations to the no whisker model (all three)
-
-            inds{35} = setdiff(1:coeffLength, indPartial{2}+1); % removing sound
-            inds{36} = setdiff(1:coeffLength, indPartial{3}+1); % removing reward
-            inds{37} = setdiff(1:coeffLength, indPartial{4}+1); % removing whisking
-            inds{38} = setdiff(1:coeffLength, indPartial{5}+1); % removing licking
-            
-            inds{39} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{2})+1); % removing whisker + sound
-            inds{40} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{3})+1); % removing whisker + sound
-            inds{41} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{4})+1); % removing whisker + sound
-            inds{42} = setdiff(1:coeffLength, union(indPartial{1}, indPartial{5})+1); % removing whisker + sound
             
             for i = 3 : 44
                 spkValAll{i} = cell(length(angles),1);
