@@ -63,7 +63,7 @@ numResampling = 10000; % permutation test
 cd(baseDir)
 load('cellFunctionLasso_NC.mat')
 
-for mi = 1 : length(mice)    
+for mi = 4 : length(mice)    
 % for mi = 2
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir,mouse))
@@ -82,7 +82,10 @@ for mi = 1 : length(mice)
         % find preLick touch trials
         firstLickTime = cell(length(u.trials),1);
         allLicks = cellfun(@(x) union(union(union(x.leftLickTime, x.rightLickTime), x.answerLickTime), x.poleDownOnsetTime), u.trials, 'un', 0);
-        lickIndsAfterPoleIn = cellfun(@(x,y) find(x>y.poleUpTime(1),1), allLicks, u.trials);
+        lickIndsAfterPoleIn = cellfun(@(x,y) find(x>y.poleUpOnsetTime,1), allLicks, u.trials);
+        % poleUpTime(1) should be better, but there is almost no
+        % difference in the result, and it's hard to deal with catch trials
+        % 2019/10/16 JK
         for licki = 1 : length(firstLickTime)
             firstLickTime{licki} = allLicks{licki}(lickIndsAfterPoleIn(licki));
         end
