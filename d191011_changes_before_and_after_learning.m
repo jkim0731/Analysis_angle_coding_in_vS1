@@ -27,7 +27,7 @@ mean(propChange)
 sem(propChange)
 [~,p] = ttest(propChange-1)
 
-%% # of active cells decreases, by about 12 % (88.32 % /+- 3.88 %; compared to naive. p = 3.03e-6)
+%% # of active cells decreases, by about 12 % (88.32 % /+- 3.88 %; compared to naive. p = 0.0297)
 %% Where to they come from? L4, or L2/3?
 
 numActiveNaive = zeros(numMice,4); % 1 L2/3 C2, 2 L2/3 non-C2, 3 L4 C2, 4 L4 non-C2
@@ -83,7 +83,7 @@ plot(xvals, [1; 1], '--', 'color', ones(1,3)*0.7)
 xticks(1:4)
 xticklabels({'L2/3 C2', 'L2/3 non-C2', 'L4 C2', 'L4 non-C2'})
 ylabel('Ratio # active cells (expert / naive)')
-[~,pvals] = ttest(tempMat)
+[~,pvals] = ttest(tempMat-1)
 
 
 %% decrese only in L2/3, not in L4, but all of them shows no significance.

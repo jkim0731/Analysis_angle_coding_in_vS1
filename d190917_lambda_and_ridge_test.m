@@ -664,13 +664,23 @@ for mi = 1 : 6
         distDp(mi,:,i,3) = histcounts(touchData.groupMdl{mi}.io.X(wInds,2), histRange, 'normalization', histNormMeth) * length(wInds) / length(wrongTrialInds);
     end
 end
-
-figure, 
+%%
+set(0,'defaultaxesfontname', 'Arial')
+set(0,'defaultaxesfontsize', 12)
+figure('units', 'normalized', 'outerposition', [0.1 0.1 0.7 0.5]) 
 subplot(121), hold on % for correct trials
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), std(squeeze(distDkv(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), std(squeeze(distDkv(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,2))), std(squeeze(distDkv(:,:,2,2)))/sqrt(6), 'lineprop', 'c')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,2))), std(squeeze(distDkv(:,:,1,2)))/sqrt(6), 'lineprop', 'm')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), std(squeeze(distDkv(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), std(squeeze(distDkv(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,2))), std(squeeze(distDkv(:,:,2,2)))/sqrt(6), 'lineprop', 'c')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,2))), std(squeeze(distDkv(:,:,1,2)))/sqrt(6), 'lineprop', 'm')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), 'b')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), 'r')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,2))), 'c')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,2))), 'm')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), std(squeeze(distDkv(:,:,2,1)))/sqrt(6), 'b')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), std(squeeze(distDkv(:,:,1,1)))/sqrt(6), 'r')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,2))), std(squeeze(distDkv(:,:,2,2)))/sqrt(6), 'c')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,2))), std(squeeze(distDkv(:,:,1,2)))/sqrt(6), 'm')
 if strcmp(histNormMeth,'cdf')
     ylim([0 0.8])
     ylabel('Cumulative proportion')
@@ -679,13 +689,21 @@ else
     ylabel('Proportion')
 end
 xlabel('\Delta\kappa_V (standardized)')
-legend({'45\circ', '135\circ', '45\circ correct', '135\circ correct'})
+legend({'45\circ', '135\circ', '45\circ correct', '135\circ correct'}, 'box', 'off')
 
 subplot(122), hold on % for wrong trials
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), std(squeeze(distDkv(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), std(squeeze(distDkv(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,3))), std(squeeze(distDkv(:,:,2,3)))/sqrt(6), 'lineprop', 'm')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,3))), std(squeeze(distDkv(:,:,1,3)))/sqrt(6), 'lineprop', 'c')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), std(squeeze(distDkv(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), std(squeeze(distDkv(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,3))), std(squeeze(distDkv(:,:,2,3)))/sqrt(6), 'lineprop', 'm')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,3))), std(squeeze(distDkv(:,:,1,3)))/sqrt(6), 'lineprop', 'c')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), 'b')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), 'r')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,3))), 'm')
+plot(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,3))), 'c')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,1))), std(squeeze(distDkv(:,:,2,1)))/sqrt(6), 'b')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,1))), std(squeeze(distDkv(:,:,1,1)))/sqrt(6), 'r')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,2,3))), std(squeeze(distDkv(:,:,2,3)))/sqrt(6), 'm')
+boundedline(histRange(1:end-1), mean(squeeze(distDkv(:,:,1,3))), std(squeeze(distDkv(:,:,1,3)))/sqrt(6), 'c')
 if strcmp(histNormMeth,'cdf')
     ylim([0 0.8])
     ylabel('Cumulative proportion')
@@ -695,14 +713,22 @@ else
 end
 xlabel('\Delta\kappa_V (standardized)')
 
-legend({'45\circ', '135\circ', '45\circ wrong', '135\circ wrong'})
+legend({'45\circ', '135\circ', '45\circ wrong', '135\circ wrong'}, 'box', 'off')
 
-figure, 
+figure('units', 'normalized', 'outerposition', [0.1 0.1 0.7 0.5]) 
 subplot(121), hold on % for correct trials
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), std(squeeze(distDp(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), std(squeeze(distDp(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,2))), std(squeeze(distDp(:,:,2,2)))/sqrt(6), 'lineprop', 'c')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,2))), std(squeeze(distDp(:,:,1,2)))/sqrt(6), 'lineprop', 'm')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), std(squeeze(distDp(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), std(squeeze(distDp(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,2))), std(squeeze(distDp(:,:,2,2)))/sqrt(6), 'lineprop', 'c')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,2))), std(squeeze(distDp(:,:,1,2)))/sqrt(6), 'lineprop', 'm')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), 'b')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), 'r')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,2,2))), 'c')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,1,2))), 'm')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), std(squeeze(distDp(:,:,2,1)))/sqrt(6), 'b')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), std(squeeze(distDp(:,:,1,1)))/sqrt(6), 'r')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,2,2))), std(squeeze(distDp(:,:,2,2)))/sqrt(6), 'c')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,1,2))), std(squeeze(distDp(:,:,1,2)))/sqrt(6), 'm')
 if strcmp(histNormMeth,'cdf')
     ylim([0 0.8])
     ylabel('Cumulative proportion')
@@ -712,13 +738,21 @@ else
 end
 xlabel('\Delta\phi (standardized)')
 
-legend({'45\circ', '135\circ', '45\circ correct', '135\circ correct'})
+legend({'45\circ', '135\circ', '45\circ correct', '135\circ correct'}, 'box', 'off')
 
 subplot(122), hold on % for wrong trials
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), std(squeeze(distDp(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), std(squeeze(distDp(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,3))), std(squeeze(distDp(:,:,2,3)))/sqrt(6), 'lineprop', 'm')
-shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,3))), std(squeeze(distDp(:,:,1,3)))/sqrt(6), 'lineprop', 'c')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), std(squeeze(distDp(:,:,2,1)))/sqrt(6), 'lineprop', 'b')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), std(squeeze(distDp(:,:,1,1)))/sqrt(6), 'lineprop', 'r')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,2,3))), std(squeeze(distDp(:,:,2,3)))/sqrt(6), 'lineprop', 'm')
+% shadedErrorBar(histRange(1:end-1), mean(squeeze(distDp(:,:,1,3))), std(squeeze(distDp(:,:,1,3)))/sqrt(6), 'lineprop', 'c')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), 'b')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), 'r')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,2,3))), 'm')
+plot(histRange(1:end-1), mean(squeeze(distDp(:,:,1,3))), 'c')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,2,1))), std(squeeze(distDp(:,:,2,1)))/sqrt(6), 'b')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,1,1))), std(squeeze(distDp(:,:,1,1)))/sqrt(6), 'r')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,2,3))), std(squeeze(distDp(:,:,2,3)))/sqrt(6), 'm')
+boundedline(histRange(1:end-1), mean(squeeze(distDp(:,:,1,3))), std(squeeze(distDp(:,:,1,3)))/sqrt(6), 'c')
 if strcmp(histNormMeth,'cdf')
     ylim([0 0.8])
     ylabel('Cumulative proportion')
@@ -727,7 +761,25 @@ else
     ylabel('Proportion')
 end
 xlabel('\Delta\phi (standardized)')
-legend({'45\circ', '135\circ', '45\circ wrong', '135\circ wrong'})
+legend({'45\circ', '135\circ', '45\circ wrong', '135\circ wrong'}, 'box', 'off')
+
+
+
+
+%%
+
+saveDir = 'C:\Users\shires\Dropbox\Works\Manuscripts\Object Angle Coding in vS1\Figures\Fig2-S5 Wrong trials dkv and dphi\';
+fn = 'dkv_cumprop.eps';
+export_fig([saveDir, fn], '-depsc', '-painters', '-r600', '-transparent')
+fix_eps_fonts([saveDir, fn])
+
+
+%%
+
+saveDir = 'C:\Users\shires\Dropbox\Works\Manuscripts\Object Angle Coding in vS1\Figures\Fig2-S5 Wrong trials dkv and dphi\';
+fn = 'dphi_cumprop.eps';
+export_fig([saveDir, fn], '-depsc', '-painters', '-r600', '-transparent')
+fix_eps_fonts([saveDir, fn])
 
 
 %% Results: wrong trials in 135 degrees have dKv distribution closer to 45 degrees, which should have made it easier to be fooled.

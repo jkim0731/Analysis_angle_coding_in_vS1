@@ -1,3 +1,6 @@
+% Modified from angle_tuning_preAnswer_perTouch_spkOnly
+% For task modulation test
+% After drinking
 
 % Modified from angle_tuning_predecision
 % Only within cells responding to touch (from glmFunctionLasso_NC.mat)
@@ -37,8 +40,8 @@
 %%
 % settings
 clear
-baseDir = 'Y:\Whiskernas\JK\suite2p\';
-% baseDir = 'D:\TPM\JK\suite2p\';
+% baseDir = 'Y:\Whiskernas\JK\suite2p\';
+baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 % sessions = {[4,19],[3,16],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3],[6],[4],[4],[4]};
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
@@ -72,62 +75,57 @@ for mi = 1 : length(mice)
         load(ufn)
         
         % still some settings
-        savefn = [u.mouseName,u.sessionName,'angle_tuning_lasso_preAnswer_perTouch_spkOnly_NC_permTestCorrected.mat']; %
+        savefn = [u.mouseName,u.sessionName,'angle_tuning_postDrink_perTouch_spkOnly_NC.mat']; %
 
         % making templates
-        % find preAnswer touch trials
-        answerTime = cell(length(u.trials),1);
-        for di = 1 : length(answerTime)
-            if isempty(u.trials{di}.answerLickTime)
-                answerTime{di} = u.trials{di}.poleDownOnsetTime;
+        % find postDrink touch trials
+        drinkingTime = cell(length(u.trials),1);
+        for di = 1 : length(drinkingTime)
+            if isempty(u.trials{di}.drinkingOnsetTime)
+                drinkingTime{di} = u.trials{di}.poleDownOnsetTime;
             else
-                answerTime{di} = u.trials{di}.answerLickTime;
+                drinkingTime{di} = u.trials{di}.drinkingOnsetTime;
             end
         end
+        tempDrinkingTrialInd = find(cellfun(@(x) ~isempty(x.drinkingOnsetTime), u.trials));
         tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
-        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunksByWhisking{1}(1)) < y, u.trials(tempTouchTrialInd), answerTime(tempTouchTrialInd)));
-        touchTrialInd = tempTouchTrialInd(pdTouchInd);
+        tempInd = intersect(tempDrinkingTrialInd, tempTouchTrialInd);
+        pdTouchInd = find(cellfun(@(x,y) length(x.whiskerTime(cellfun(@(z) z(1), x.protractionTouchChunksByWhisking)) > y), u.trials(tempInd), drinkingTime(tempInd)));
+        touchTrialInd = tempInd(pdTouchInd);
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
         planeTrialsNum = cell(numPlane,1);
-        poleUpFrames = cell(numPlane,1);
+        postDrinkFrames = cell(numPlane,1);
         beforePoleUpFrames = cell(numPlane,1);
         touchFrames = cell(numPlane,1);        
         nonTouchFrames = cell(numPlane,1); % within pole up frames. Need for confirmation whether the cell is really touch-responsive, compared to general task-responsive.    
-        numTouchPreAnswer = cell(numPlane,1);
+        numTouchPostDrink = cell(numPlane,1);
         angleTrialInds = cell(numPlane,1);
         for pi = 1 : numPlane
             planeTrialsInd{pi} = intersect(find(cellfun(@(x) ismember(pi, x.planes), u.trials)), touchTrialInd);
             tempInd = find(u.trials{planeTrialsInd{pi}(1)}.planes == pi);
             planeTrialsNum{pi} = cellfun(@(x) x.trialNum, u.trials(planeTrialsInd{pi}));
             
-            poleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} >= x.poleUpTime(1) & x.tpmTime{tempInd} <= x.poleUpTime(end)), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
+            postDrinkFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} >= x.drinkingOnsetTime(1) & x.tpmTime{tempInd} <= x.poleUpTime(end)), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
             beforePoleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} < x.poleUpOnsetTime), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);            
             touchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
             nonTouchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
-            numTouchPreAnswer{pi} = zeros(length(planeTrialsInd{pi}),1);
+            numTouchPostDrink{pi} = zeros(length(planeTrialsInd{pi}),1);
             for ti = 1 : length(planeTrialsInd{pi})
                 tempTrial = u.trials{planeTrialsInd{pi}(ti)};
+                tempDrinkTime = tempTrial.drinkingOnsetTime;
+                afterDrinkInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) > tempDrinkTime, tempTrial.protractionTouchChunksByWhisking));
                 
-                if isempty(tempTrial.answerLickTime)
-                    tempAnswerTime = tempTrial.poleDownOnsetTime;
-                else
-                    tempAnswerTime = tempTrial.answerLickTime;
-                end
-                preAnswerInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempAnswerTime, tempTrial.protractionTouchChunksByWhisking));
-                
-                tempFrames = cell(1, length(preAnswerInd));
+                tempFrames = cell(1, length(afterDrinkInd));
                 
                 for ptci = 1 : length(tempFrames)
-                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
-                    % tpmTime is the beginning timepoint of each frame from the trial start point (TTL1 signal). 
-                    % Considering Ca2+ and GCaMP signal rise time, any event should be assigned to frames having the time point >= to that event timing.
-                    % (ref, C:\Users\shires\Documents\GitHub\jksbx\+Calcium\@CalciumDataArray\CalciumDataArray.m)
-                    % +1 frame for delayed response (~ > 120 ms)
+                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{afterDrinkInd(ptci)}(1)), 1, 'first');
                 end
                 touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
-                nonTouchFrames{pi}{ti} = setdiff(poleUpFrames{pi}{ti}, touchFrames{pi}{ti});
-                numTouchPreAnswer{pi}(ti) = length(preAnswerInd);
+%                 tempTouchFrames = unique(cell2mat(tempFrames));
+%                 touchFrames{pi}{ti} = tempTouchFrames(tempTouchFrames <= length(tempTrial.tpmTime{tempInd})); % sometimes touch can happen after tpm imaging is done with that trial
+                nonTouchFrames{pi}{ti} = setdiff(postDrinkFrames{pi}{ti}, touchFrames{pi}{ti});
+                numTouchPostDrink{pi}(ti) = length(afterDrinkInd);
             end
             angleTrialInds{pi} = cell(length(angles),1); % index of planeTrialsInd{pi}
             for ai = 1 : length(angles)
@@ -182,7 +180,7 @@ for mi = 1 : length(mice)
             spkNontouchFrames = nonTouchFrames{plane};
             baselineFrames = beforePoleUpFrames{plane};
             angleInds = angleTrialInds{plane}; % index of trialInds
-            numTouch = numTouchPreAnswer{plane};
+            numTouch = numTouchPostDrink{plane};
             
             % all spikes
             cind = find(u.trials{trialInds(1)}.neuindSession == cellNum);
@@ -218,9 +216,9 @@ for mi = 1 : length(mice)
             
             %% ANOVA
             spkAnovaVal = cell2mat(spkVal);
-            if ~isempty(find(isnan(spkAnovaVal)))
-                error('nan values')
-            end
+%             if ~isempty(find(isnan(spkAnovaVal)))
+%                 error('nan values')
+%             end
             groupAnova = zeros(size(spkAnovaVal));
             angleLengths = [0;cumsum(cellfun(@length, spkVal))];
             for ai = 1 : length(angles)
@@ -229,7 +227,12 @@ for mi = 1 : length(mice)
                         
             [spkAnovaP, ~, spkAnovaStat] = anova1(spkAnovaVal, groupAnova, 'off');
             spkAnovaPAll(ci) = spkAnovaP;
-            spkPairComp = multcompare(spkAnovaStat, 'Ctype', anovactype, 'Display', 'off');
+            try
+                spkPairComp = multcompare(spkAnovaStat, 'Ctype', anovactype, 'Display', 'off');
+            catch
+                spkAnovaStat
+                error('Error in multcompare')
+            end
             spkMeans = spkAnovaStat.means;
 
             %% Then with spikes

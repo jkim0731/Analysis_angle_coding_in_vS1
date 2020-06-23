@@ -136,9 +136,9 @@ figure; hold on;
 plot(1:nCells, mean(nonlearnerPerformance), 'c')
 plot(1:nCells, mean(naivePerformance), 'b')
 plot(1:nCells, mean(expertPerformance), 'r')
-shadedErrorBar(1:size(nonlearnerPerformance,2), mean(nonlearnerPerformance), std(nonlearnerPerformance)/sqrt(6), 'c');
-shadedErrorBar(1:size(naivePerformance,2), mean(naivePerformance), std(naivePerformance)/sqrt(6), 'b');
-shadedErrorBar(1:size(expertPerformance,2), mean(expertPerformance), std(expertPerformance)/sqrt(6), 'r');
+shadedErrorBar(1:size(nonlearnerPerformance,2), mean(nonlearnerPerformance), std(nonlearnerPerformance)/sqrt(6), 'lineprops','c');
+shadedErrorBar(1:size(naivePerformance,2), mean(naivePerformance), std(naivePerformance)/sqrt(6), 'lineprops','b');
+shadedErrorBar(1:size(expertPerformance,2), mean(expertPerformance), std(expertPerformance)/sqrt(6), 'lineprops','r');
 
 plot(1:nCells, mean(nonlearnerPerformance), 'c')
 plot(1:nCells, mean(naivePerformance), 'b')
@@ -150,15 +150,15 @@ xlabel('# of cells')
 ylabel('Performance')
 
 %% example classifier performance
-i = 2;
+i = 6;
 figure
 subplot(121), hold on
 naiveEgAcc = naive(naiveNum(i)).accuracy;
 naiveEgAccShuffled = naive(naiveNum(i)).accuracyShuffled;
 plot(1:size(naiveEgAcc,2), mean(naiveEgAcc), 'b')
 plot(1:size(naiveEgAccShuffled,2), mean(naiveEgAccShuffled), 'k')
-shadedErrorBar(1:size(naiveEgAcc,2), mean(naiveEgAcc), std(naiveEgAcc)/sqrt(10), 'b');
-shadedErrorBar(1:size(naiveEgAccShuffled,2), mean(naiveEgAccShuffled), std(naiveEgAccShuffled)/sqrt(10), 'k');
+shadedErrorBar(1:size(naiveEgAcc,2), mean(naiveEgAcc), std(naiveEgAcc)/sqrt(10), 'lineprops','b');
+shadedErrorBar(1:size(naiveEgAccShuffled,2), mean(naiveEgAccShuffled), std(naiveEgAccShuffled)/sqrt(10), 'lineprops','k');
 
 ylim([0 0.8])
 legend({'LDA', 'Shuffled'}, 'box', 'off')
@@ -171,8 +171,8 @@ expertEgAcc = expert(i).accuracy;
 expertEgAccShuffled = expert(i).accuracyShuffled;
 plot(1:size(expertEgAcc,2), mean(expertEgAcc), 'b')
 plot(1:size(expertEgAccShuffled,2), mean(expertEgAccShuffled), 'k')
-shadedErrorBar(1:size(expertEgAcc,2), mean(expertEgAcc), std(expertEgAcc)/sqrt(10), 'b');
-shadedErrorBar(1:size(expertEgAccShuffled,2), mean(expertEgAccShuffled), std(expertEgAccShuffled)/sqrt(10), 'k');
+shadedErrorBar(1:size(expertEgAcc,2), mean(expertEgAcc), std(expertEgAcc)/sqrt(10), 'lineprops','b');
+shadedErrorBar(1:size(expertEgAccShuffled,2), mean(expertEgAccShuffled), std(expertEgAccShuffled)/sqrt(10), 'lineprops','k');
 
 ylim([0 0.8])
 % legend({'LDA', 'Shuffled'}, 'box', 'off')

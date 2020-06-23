@@ -48,7 +48,7 @@ function glm = glm_results_cell_function_touch(mouse, session, baseDir)
 % Forget about tuning here. It can't be well inferred from glm. 2019/04/08 JK
 
 %% basic settings
-% chi2pvalThreshold = 0.001; % less than 0.001 for fitting
+chi2pvalThreshold = 0.001; % less than 0.001 for fitting
 deThreshold = 0.1; % include 0.1 as fit
 coeffThreshold = 0; % include 0.01 as a coefficient
 repeat = 10;
@@ -60,6 +60,7 @@ L4depth = 350; % include 350 um as L4 (350 is the starting point)
 
 %% dependent settings
 ufn = sprintf('UberJK%03dS%02d_NC',mouse, session);
+% ufn = sprintf('UberJK%03dS%02d',mouse, session);
 glmfnBase = sprintf('glmResponseType_JK%03dS%02d_lasso_NC_R', mouse, session);
 % cafn = sprintf('JK%03dS%02dsingleCell_anova_calcium_final', mouse, session);
 % spkfn = sprintf('JK%03dS%02dsingleCell_anova_spk_final', mouse, session);
@@ -119,8 +120,8 @@ parfor ci = 1 : length(deFitInd)
     dfFull = length(coeffInds);
     
     tempFit = zeros(1,length(indPartial) + 1);
-%     if devExplained >= deThreshold && devianceFullNull > chi2inv(1-chi2pvalThreshold, dfFull) % re-evaluation led to full model fit
-    if devExplained >= deThreshold  % for ridge
+    if devExplained >= deThreshold && devianceFullNull > chi2inv(1-chi2pvalThreshold, dfFull) % re-evaluation led to full model fit
+%     if devExplained >= deThreshold  % for ridge
         tempFit(1) = 1;
         for pi = 1 : length(indPartial)
             if sum(ismember(coeffInds, indPartial{pi})) > 0
@@ -132,8 +133,8 @@ parfor ci = 1 : length(deFitInd)
                 DEdiff = devExplained - devExpPartial;
                 devianceFullPartial = 2*(fullLogLikelihood - partialLogLikelihood);
                 dfPartial = length(find(coeff(resInd+1)));
-%                 if DEdiff >= deThreshold && devianceFullPartial > chi2inv(1-chi2pvalThreshold, dfFull - dfPartial)
-                if DEdiff >= deThreshold % for ridge    
+                if DEdiff >= deThreshold && devianceFullPartial > chi2inv(1-chi2pvalThreshold, dfFull - dfPartial)
+%                 if DEdiff >= deThreshold % for ridge    
                     tempFit(pi+1) = 1;
                 end
             end

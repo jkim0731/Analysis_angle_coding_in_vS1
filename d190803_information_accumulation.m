@@ -421,3 +421,177 @@ end
 %% Results: Mice need at least 3 touches in general, but their number of trials with <= 3 touches are low. 
 %% Some mice simply do not have enough number of trials in this bin (at least 2 - JK036 & Jk039)
 
+
+
+
+
+
+%% Re-visited 2019/12/09
+% look at having jsut 1 touch, lasting at least 10 ms, before the answer lick
+
+wDir = 'Y:\Whiskernas\JK\whisker\tracked\';
+bDir = 'Y:\Whiskernas\JK\SoloData\';
+mice = [25,27,30,36,39,52];
+% sessions = {[18,19,22],[7,10,14],[20,21,22],[16,17,18],[21,23,24],[20,21,26]}; 
+sessions = {[18,19,22],[7,10,14],[20,21,22],[16,17,18],[21,23,24],[20,21,26]}; 
+numTouchBin = [0:10,100]; % 10th bin will have # of touches >= 10 
+% correctRate = zeros(length(mice),length(numTouchBin)-1,3);
+numTrial = zeros(length(mice),length(numTouchBin)-1,3);
+numCorrect = zeros(length(mice),length(numTouchBin)-1,3);
+for mi = 1 : length(mice)
+% for ei = 1
+    mouse = mice(mi);
+    load(sprintf('%sJK%03d\\behavior_JK%03d',bDir,mouse,mouse));
+    for si = 1 : 3 % 1 for 2 angles expert, 2 for 7 angles expert, 3 for radial distance
+%     for si = 1
+        session = sessions{mi}(si);
+        currB = b{find(cellfun(@(x) strcmp(x.sessionName, sprintf('S%02d',session)), b))};
+        wfa = Whisker.WhiskerFinal_2padArray(sprintf('%sJK%03dS%02d',wDir,mouse,session));
+        wB = currB.trials(find(ismember(currB.trialNums, wfa.trialNums)));
+        
+        answerTrialInds = find(cellfun(@(x) length(x.answerLickTime), wB));
+        angleTrialInds = find(cellfun(@(x) x.poleAngle ~= 90, wfa.trials));
+        touchTrialInds = find(cellfun(@(x) length(x.protractionTouchDuration), wfa.trials));
+        testInds = intersect(intersect(answerTrialInds, angleTrialInds), touchTrialInds);
+        
+        testBtemp = wB(testInds);
+        testWtemp = wfa.trials(testInds);
+        
+        firstTouchLong = find(cellfun(@(x) x.protractionTouchDuration(1) > 0.015, testWtemp));
+        
+        testB = testBtemp(firstTouchLong);
+        testW = testWtemp(firstTouchLong);
+        
+        answerLickTime = cellfun(@(x) x.answerLickTime, testB, 'uniformoutput', false); % no empty cell because these are from answer trials
+        numTouch = cellfun(@(x,y) length(find(x.time(cellfun(@(z) z(1), x.protractionTFchunks)) < y)), testW, answerLickTime);
+        correctInd = find(cellfun(@(x) x.trialCorrect, testB));
+
+        numTrial(mi,:,si) = histcounts(numTouch,numTouchBin);
+        numCorrect(mi,:,si) = histcounts(numTouch(correctInd),numTouchBin);        
+
+    end
+end
+%%
+totalCR = squeeze(sum(numCorrect,2) ./ sum(numTrial,2));
+correctRate = numCorrect./numTrial;
+pvalChance = zeros(size(correctRate,3),size(correctRate,2));
+pvalBest = zeros(size(correctRate,3),size(correctRate,2));
+for i = 1 : size(correctRate,3)
+    [~,pvalChance(i,:)] = ttest(correctRate(:,:,i)-0.5);
+    [~,pvalBest(i,:)] = ttest(correctRate(:,:,i) - totalCR(:,i));
+end
+%%
+propTrial = numTrial./sum(numTrial,2);
+titles = {'2 angles', '7 angles', 'Radial distance'};
+figure,
+for i = 1 : 3    
+    subplot(2,3,i), errorbar(0:10, nanmean(correctRate(:,:,i)), nanstd(correctRate(:,:,i))/sqrt(length(mice)), '-k'), hold on
+    tempInd = find(pvalChance(i,:)<0.01);
+    xval = 0:10;
+    errorbar(xval(tempInd), nanmean(correctRate(:,tempInd,i)), nanstd(correctRate(:,tempInd,i))/sqrt(length(mice)), '.r')
+    title(titles(i))
+    xlim([-1 11])
+    xticks([0:2:10])
+    xticklabels({'0','2','4','6','8','>10'})
+    ylabel('Correct rate')
+    ylim([0.4 1])
+    subplot(2,3,i+3), errorbar(0:10, mean(propTrial(:,:,i)), std(propTrial(:,:,i))/sqrt(length(mice)), '-k')
+    xlim([-1 11])
+    xticks([0:2:10])
+    xticklabels({'0','2','4','6','8','>10'})
+    ylabel('Proportion of trials')
+    ylim([0 0.4])
+    if i == 2
+        xlabel('# of touch before answer lick')
+    end
+end
+
+
+%% Results: it's still the same. They need at least 2 touches for better than chance performance, and more than 3 touches perform similarly.
+% what about before the first lick? maybe many of 1 touch before answer
+% lick were impulsive lickings, start licking even before touches
+
+
+%%
+wDir = 'Y:\Whiskernas\JK\whisker\tracked\';
+bDir = 'Y:\Whiskernas\JK\SoloData\';
+mice = [25,27,30,36,39,52];
+% sessions = {[18,19,22],[7,10,14],[20,21,22],[16,17,18],[21,23,24],[20,21,26]}; 
+sessions = {[18,19,22],[7,10,14],[20,21,22],[16,17,18],[21,23,24],[20,21,26]}; 
+numTouchBin = [0:10,100]; % 10th bin will have # of touches >= 10 
+% correctRate = zeros(length(mice),length(numTouchBin)-1,3);
+numTrial = zeros(length(mice),length(numTouchBin)-1,3);
+numCorrect = zeros(length(mice),length(numTouchBin)-1,3);
+for mi = 1 : length(mice)
+% for ei = 1
+    mouse = mice(mi);
+    load(sprintf('%sJK%03d\\behavior_JK%03d',bDir,mouse,mouse));
+    for si = 1 : 3 % 1 for 2 angles expert, 2 for 7 angles expert, 3 for radial distance
+%     for si = 1
+        session = sessions{mi}(si);
+        currB = b{find(cellfun(@(x) strcmp(x.sessionName, sprintf('S%02d',session)), b))};
+        wfa = Whisker.WhiskerFinal_2padArray(sprintf('%sJK%03dS%02d',wDir,mouse,session));
+        wB = currB.trials(find(ismember(currB.trialNums, wfa.trialNums)));
+        
+        answerTrialInds = find(cellfun(@(x) length(x.answerLickTime), wB));
+        angleTrialInds = find(cellfun(@(x) x.poleAngle ~= 90, wfa.trials));
+        touchTrialInds = find(cellfun(@(x) length(x.protractionTouchDurationByWhisking), wfa.trials));
+        testInds = intersect(intersect(answerTrialInds, angleTrialInds), touchTrialInds);
+        
+        testBtemp = wB(testInds);
+        testWtemp = wfa.trials(testInds);
+        
+        firstLickTime = cellfun(@(x) x.beamBreakTimes(find(x.beamBreakTimes > x.poleUpOnsetTime,1)), testBtemp, 'uniformoutput', false); % no empty cell because these are from answer trials
+        
+        indFirstTouchBeforeLick = find(cellfun(@(x,y) x.time(x.protractionTFchunksByWhisking{1}(end)) < y, testWtemp, firstLickTime));
+        indFirstTouchLong = find(cellfun(@(x) x.protractionTouchDuration(1) > 0.015, testWtemp));
+        
+        testB = testBtemp(intersect(indFirstTouchBeforeLick, indFirstTouchLong));
+        testW = testWtemp(intersect(indFirstTouchBeforeLick, indFirstTouchLong));
+        
+        answerLickTime = cellfun(@(x) x.answerLickTime, testB, 'uniformoutput', false); % no empty cell because these are from answer trials
+        numTouch = cellfun(@(x,y) length(find(x.time(cellfun(@(z) z(1), x.protractionTFchunksByWhisking)) < y)), testW, firstLickTime(intersect(indFirstTouchBeforeLick, indFirstTouchLong)));
+        correctInd = find(cellfun(@(x) x.trialCorrect, testB));
+
+        numTrial(mi,:,si) = histcounts(numTouch,numTouchBin);
+        numCorrect(mi,:,si) = histcounts(numTouch(correctInd),numTouchBin);        
+
+    end
+end
+%
+totalCR = squeeze(sum(numCorrect,2) ./ sum(numTrial,2));
+correctRate = numCorrect./numTrial;
+pvalChance = zeros(size(correctRate,3),size(correctRate,2));
+pvalBest = zeros(size(correctRate,3),size(correctRate,2));
+for i = 1 : size(correctRate,3)
+    [~,pvalChance(i,:)] = ttest(correctRate(:,:,i)-0.5);
+    [~,pvalBest(i,:)] = ttest(correctRate(:,:,i) - totalCR(:,i));
+end
+%
+propTrial = numTrial./sum(numTrial,2);
+titles = {'2 angles', '7 angles', 'Radial distance'};
+figure,
+for i = 1 : 3    
+    subplot(2,3,i), errorbar(0:10, nanmean(correctRate(:,:,i)), nanstd(correctRate(:,:,i))/sqrt(length(mice)), '-k'), hold on
+    tempInd = find(pvalChance(i,:)<0.01);
+    xval = 0:10;
+    errorbar(xval(tempInd), nanmean(correctRate(:,tempInd,i)), nanstd(correctRate(:,tempInd,i))/sqrt(length(mice)), '.r')
+    title(titles(i))
+    xlim([-1 11])
+    xticks([0:2:10])
+    xticklabels({'0','2','4','6','8','>10'})
+    ylabel('Correct rate')
+    ylim([0.4 1])
+    subplot(2,3,i+3), errorbar(0:10, mean(propTrial(:,:,i)), std(propTrial(:,:,i))/sqrt(length(mice)), '-k')
+    xlim([-1 11])
+    xticks([0:2:10])
+    xticklabels({'0','2','4','6','8','>10'})
+    ylabel('Proportion of trials')
+    ylim([0 0.4])
+    if i == 2
+        xlabel('# of touch before answer lick')
+    end
+end
+
+%% Results: well now, in 2 angles and radial distance session, just 1 touch makes it perform better than change (> 70 %)
+

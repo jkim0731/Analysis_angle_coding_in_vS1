@@ -44,8 +44,10 @@ end
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 % sessions = {[1:19,22],[1:14],[1:7,9:22],[1:18],[1:10,12:24],[1:22,24:31],[1:25],[1:19,21:30],[1:26],[1:3,5:21],[1:24],[1:13]};
 sessions = {[1:17],[1:7],[1:20],[1:16],[1:25],[1:31],[1:18],[1:30],[1:20],[1:21],[1:24],[1:13]};
-behaviorDir = 'Y:\Whiskernas\JK\SoloData\';
-whiskerDir = 'Y:\Whiskernas\JK\whisker\tracked\';
+% behaviorDir = 'Y:\Whiskernas\JK\SoloData\';
+% whiskerDir = 'Y:\Whiskernas\JK\whisker\tracked\';
+behaviorDir = 'D:\TPM\JK\SoloData\';
+whiskerDir = 'D:\TPM\JK\tracked\';
 
 duration = 8; % in sec
 inflation = 100; % for graphical clearance

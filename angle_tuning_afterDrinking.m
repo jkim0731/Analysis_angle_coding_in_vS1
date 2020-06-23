@@ -1,3 +1,7 @@
+% Angle tuning after drinking, to see the effect of task modulation
+% Copied from angle_tuning_predecision
+% 
+
 % Only within cells responding to touch (from glmFunctionRidgeDE010.mat)
 
 % 1) z-score of calcium response. pole up frames / before pole up frames (calcium)
@@ -32,6 +36,7 @@ mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
 naiveMi = 1:12;
 expertMi = [1,2,3,4,7,9];
+% expertMi = [2,9];
 
 angles = 45:15:135;
 thresholdAnovaP = 0.05; 
@@ -45,6 +50,7 @@ numResampling = 10000; % permutation test
 % It should be at the base directory
 cd(baseDir)
 load('cellFunctionLasso_NC.mat')
+% expert = expert([2,6]);
 
 for mi = 1 : length(mice)    
 % for mi = 2
@@ -59,25 +65,27 @@ for mi = 1 : length(mice)
         load(ufn)
         
         % still some settings
-        savefn = [u.mouseName,u.sessionName,'angle_tuning_lasso_predecision_NC_permTestCorrected.mat']; %
+        savefn = [u.mouseName,u.sessionName,'angle_tuning_afterDrinking.mat']; %
 
         % making templates
-        % find predecision touch trials
-        decisionTime = cell(length(u.trials),1);
-        for di = 1 : length(decisionTime)
-            if isempty(u.trials{di}.answerLickTime)
-                decisionTime{di} = u.trials{di}.poleDownOnsetTime;
+        % find postDrinkg touch trials
+        drinkingTime = cell(length(u.trials),1);
+        for di = 1 : length(drinkingTime)
+            if isempty(u.trials{di}.drinkingOnsetTime)
+                drinkingTime{di} = u.trials{di}.poleDownOnsetTime;
             else
-                decisionTime{di} = u.trials{di}.answerLickTime;
+                drinkingTime{di} = u.trials{di}.drinkingOnsetTime;
             end
         end
-        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunks), u.trials));
-        pdTouchInd = find(cellfun(@(x,y) x.whiskerTime(x.protractionTouchChunks{1}(1)) < y, u.trials(tempTouchTrialInd), decisionTime(tempTouchTrialInd)));
-        touchTrialInd = tempTouchTrialInd(pdTouchInd);
+        tempDrinkingTrialInd = find(cellfun(@(x) ~isempty(x.drinkingOnsetTime), u.trials));
+        tempTouchTrialInd = find(cellfun(@(x) ~isempty(x.protractionTouchChunksByWhisking), u.trials));
+        tempInd = intersect(tempDrinkingTrialInd, tempTouchTrialInd);
+        pdTouchInd = find(cellfun(@(x,y) length(x.whiskerTime(cellfun(@(z) z(1), x.protractionTouchChunksByWhisking)) > y), u.trials(tempInd), drinkingTime(tempInd)));
+        touchTrialInd = tempInd(pdTouchInd);
         numPlane = length(u.mimg);
         planeTrialsInd = cell(numPlane,1);
         planeTrialsNum = cell(numPlane,1);
-        poleUpFrames = cell(numPlane,1);
+        poleUpFrames = cell(numPlane,1); % time after drinking onset
         beforePoleUpFrames = cell(numPlane,1);
         touchFrames = cell(numPlane,1);
         nonTouchFrames = cell(numPlane,1); % within pole up frames        
@@ -87,24 +95,19 @@ for mi = 1 : length(mice)
             tempInd = find(u.trials{planeTrialsInd{pi}(1)}.planes == pi);
             planeTrialsNum{pi} = cellfun(@(x) x.trialNum, u.trials(planeTrialsInd{pi}));
             
-            poleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} >= x.poleUpTime(1) & x.tpmTime{tempInd} <= x.poleUpTime(end)), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
+            poleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} >= x.drinkingOnsetTime(1) & x.tpmTime{tempInd} <= x.poleUpTime(end)), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);
             beforePoleUpFrames{pi} = cellfun(@(x) find(x.tpmTime{tempInd} < x.poleUpOnsetTime), u.trials(planeTrialsInd{pi}), 'uniformoutput', false);            
             touchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
             nonTouchFrames{pi} = cell(length(planeTrialsInd{pi}),1);
             for ti = 1 : length(planeTrialsInd{pi})
                 tempTrial = u.trials{planeTrialsInd{pi}(ti)};
+                tempDrinkTime = tempTrial.drinkingOnsetTime;
+                afterDrinkInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) > tempDrinkTime, tempTrial.protractionTouchChunksByWhisking));
                 
-                if isempty(tempTrial.answerLickTime)
-                    tempDecisionTime = tempTrial.poleDownOnsetTime;
-                else
-                    tempDecisionTime = tempTrial.answerLickTime;
-                end
-                preDecisionInd = find(cellfun(@(x) tempTrial.whiskerTime(x(1)) < tempDecisionTime, tempTrial.protractionTouchChunks));
-                
-                tempFrames = cell(1, length(preDecisionInd));
+                tempFrames = cell(1, length(afterDrinkInd));
                 
                 for ptci = 1 : length(tempFrames)
-                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunks{ptci}(1)), 1, 'first');
+                    tempFrames{ptci} = [0:1] + find(tempTrial.tpmTime{tempInd} >= tempTrial.whiskerTime(tempTrial.protractionTouchChunksByWhisking{ptci}(1)), 1, 'first');
                 end
                 touchFrames{pi}{ti} = unique(cell2mat(tempFrames));
 %                 tempTouchFrames = unique(cell2mat(tempFrames));
@@ -209,9 +212,12 @@ for mi = 1 : length(mice)
             if length(caAnovaVal) ~= length(spkAnovaVal)
                 error('calcium and spike has different lengths')
             end
-            if ~isempty(find(isnan(caAnovaVal))) || ~isempty(find(isnan(spkAnovaVal)))
-                error('nan values')
-            end
+%             if ~isempty(find(isnan(caAnovaVal))) || ~isempty(find(isnan(spkAnovaVal)))
+%                 ci
+%                 caAnovaVal
+%                 spkAnovaVal
+%                 error('nan values')
+%             end
             groupAnova = zeros(size(caAnovaVal));
             angleLengths = [0;cumsum(cellfun(@length, caVal))];
             for ai = 1 : length(angles)

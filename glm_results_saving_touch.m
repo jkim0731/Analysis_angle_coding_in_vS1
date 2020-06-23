@@ -1,13 +1,16 @@
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
-mice = [25,27,30,36,37,38,39,41,52,53,54,56];
+% mice = [25,27,30,36,37,38,39,41,52,53,54,56];
 % % sessions = {[4,19,22],[3,10,17],[3,21,22],[1,17,18],[7],[2],[1,23,24],[3],[3,21,26],[3],[3],[3]};
-sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+% sessions = {[4,19],[3,10],[3,21],[1,17],[7],[2],[1,23],[3],[3,21],[3],[3],[3]};
+
 
 % mice = [27,36,41,52];
 % sessions = {[3,9,10,16,17],[1,17,18],[3],[3,4,21,22,26,27]};  
 % Many of these sessions do not have noise-correction.
 % sessions = {[3,10],[1,17],[3],[3,21]}; 
 
+mice = [75,76];
+sessions = {[4], [4]};
 for mi = 1 : length(mice)
     mouse = mice(mi);
     cd(sprintf('%s%03d',baseDir, mouse))
@@ -62,4 +65,24 @@ end
 % end
 
 save('Y:\Whiskernas\JK\suite2p\cellFunctionLasso_NC.mat', 'naive', 'expert')
+toc
+
+
+%%
+
+clear
+tic
+baseDir = 'Y:\Whiskernas\JK\suite2p\';
+mice = [75,76];
+sessions = {[4], [4]};
+
+for ni = 1 : length(mice)
+    mouse = mice(ni);
+    cd(sprintf('%s%03d',baseDir,mouse))
+    session = sessions{ni}(1);
+    load(sprintf('JK%03dS%02dglm_cell_function_lasso_NC',mouse,session))
+    scnn1a(ni) = glm;
+end
+
+save('Y:\Whiskernas\JK\suite2p\cellFunctionLasso_NC_Scnn1a.mat', 'scnn1a')
 toc

@@ -16,6 +16,11 @@
 % same as in angle_tuning_preAnswer_perTouch_spkOnly
 % Added some properties to be calculated. (type, modulation, sharpness)
 
+% 2020/06/19 JK
+% Fixed the error with indPartial. Instead of indPartial{1}, I should have
+% used indPartial{1}(end). But now this file is obsolete. Use
+% wkv_angle_tuning_v9.m
+
 baseDir = 'Y:\Whiskernas\JK\suite2p\';
 % baseDir = 'D:\TPM\JK\suite2p\';
 mice = [25,27,30,36,37,38,39,41,52,53,54,56];
@@ -58,7 +63,7 @@ for mi = 1 : length(mice)
         glmfn = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R10',mouse, session); % these are only from touch response cells
         load(glmfn, 'cIDAll', 'fitCoeffs', 'allPredictors', 'indPartial')
         ap1 = allPredictors;
-        cIDAllWKV = cIDAll;        
+        cIDAllWKV = cIDAll;
         coeffs = zeros(length(fitCoeffs),length(fitCoeffs{1}),10);
         for gi = 1 : 10
             glmfn = sprintf('glmWhisker_lasso_touchCell_NC_JK%03dS%02d_R%02d',mouse, session, gi); % these are only from touch response cells
@@ -66,7 +71,7 @@ for mi = 1 : length(mice)
             emptyCoeffsInd = find(cellfun(@isempty, fitCoeffs));
             firstNonemptyInd = find(1-cellfun(@isempty, fitCoeffs),1,'first');
             if ~isempty(emptyCoeffsInd)
-                for emptyi = 1 : length(emptyCoeffsInd)                    
+                for emptyi = 1 : length(emptyCoeffsInd)
                     fitCoeffs{emptyCoeffsInd(emptyi)} = nan(size(fitCoeffs{firstNonemptyInd}));
                 end
             end
@@ -89,7 +94,7 @@ for mi = 1 : length(mice)
             emptyCoeffsInd = find(cellfun(@isempty, fitCoeffs));
             firstNonemptyInd = find(1-cellfun(@isempty, fitCoeffs),1,'first');
             if ~isempty(emptyCoeffsInd)
-                for emptyi = 1 : length(emptyCoeffsInd)                    
+                for emptyi = 1 : length(emptyCoeffsInd)
                     fitCoeffs{emptyCoeffsInd(emptyi)} = nan(size(fitCoeffs{firstNonemptyInd}));
                 end
             end
@@ -124,11 +129,12 @@ for mi = 1 : length(mice)
             touchID = touchID';
         end
         
-%         total 55 sets for testing angle tuning
+%         total 37 sets for testing angle tuning
 %         (1) raw dF
 %         (2) full model with touch angle
-%         (3) full model with wkv
-%         (4-37) explanations later
+%         (3) wks only model
+%         (4-36) explanations later
+%         (37) full model with wkv
 
         
         % making templates
@@ -206,7 +212,7 @@ for mi = 1 : length(mice)
         multimodalAllCell = zeros(length(touchID),numModels);
             
         inds = cell(numModels-2,1);
-            coeffLength = indPartial{1}+1; % only considering whisker parameters
+            coeffLength = indPartial{1}(end)+1; % only considering whisker parameters
             inds{1} = 1:coeffLength; % whisker only model
             inds{2} = setdiff(1:coeffLength, 2:4); % maxDthetaMat
             inds{3} = setdiff(1:coeffLength, 5:7); % maxDphiMat
@@ -259,7 +265,7 @@ for mi = 1 : length(mice)
             calciumPoleUpFrames = poleUpFrames{plane};
             spkTouchFrames = touchFrames{plane};
             baselineFrames = beforePoleUpFrames{plane};
-            angleInds = angleTrialInds{plane}; % index of trialInds            
+            angleInds = angleTrialInds{plane}; % index of trialInds
             modelTouchAngleInds = allPredictorsTouchAngleInds{plane}; % index of allPredictorsTouch & allPredictorsWKV
             numTouch = numTouchPreAnswer{plane};
             
@@ -270,10 +276,10 @@ for mi = 1 : length(mice)
             tempSpk = cellfun(@(x) x.spk(cind,:), u.trials(trialInds), 'uniformoutput', false);
             spkValAll{1} = cell(length(angles),1);
             for ai = 1 : length(angles)
-                trialAngleInd = angleInds{ai};               
+                trialAngleInd = angleInds{ai};
                 spkValAll{1}{ai} = zeros(length(trialAngleInd),1);
                 for ti = 1 : length(trialAngleInd)
-                    tempInd = trialAngleInd(ti);                    
+                    tempInd = trialAngleInd(ti);
                     spkValAll{1}{ai}(ti) = sum( tempSpk{tempInd}(spkTouchFrames{tempInd}) - mean(tempSpk{tempInd}(baselineFrames{tempInd})) ) / numTouch(tempInd);
                     % Delta inferred spike per touch 2019/09/27
                 end
@@ -334,13 +340,13 @@ for mi = 1 : length(mice)
                     
                     for i = 1 : numModels-2
                         model = exp(tempInput(:,inds{i})*tempCoeff(inds{i})');
-                        spkValAll{i+2}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);                        
+                        spkValAll{i+2}{ai}(ti) = nansum(model(spkTouchFrames{matchingInd}) - nanmean(model(baselineFrames{matchingInd}))) / numTouch(matchingInd);
                     end
                 end
             end
             
             
-            % ANOVA in each configuration            
+            % ANOVA in each configuration
             anovaPcell = zeros(1,numModels);
             tunedCell = zeros(1,numModels);
             tuneAngleCell = nan(1,numModels);
@@ -372,10 +378,10 @@ for mi = 1 : length(mice)
                     permAnovaP = zeros(numResampling,1);
                     for ri = 1 : numResampling
                         tempG = groupAnova(randperm(length(groupAnova),length(groupAnova)));
-                        permAnovaP(ri) = anova1(anovaVal, tempG, 'off');                        
+                        permAnovaP(ri) = anova1(anovaVal, tempG, 'off');
                     end
                     if length(find(permAnovaP < anovaP)) < thresholdPermutation * numResampling % passed permutation test
-                        tunedCell(i) = 1;                        
+                        tunedCell(i) = 1;
                         [~, maxind] = max(abs(meanVal(sigInd)));
                         tunedAngleInd = sigInd(maxind);
                         tuneAngleCell(i) = angles(tunedAngleInd);
@@ -400,7 +406,7 @@ for mi = 1 : length(mice)
                             broadInd = intersect(sigInd,insigDiffIndGroup);
                             if length(broadInd) < 2
                                 unimodalSingleCell(i) = 1;
-                            else                            
+                            else
                                 broadNum = 1;
                                 for tunei = tunedAngleInd-1:-1:1
                                     if ismember(tunei, broadInd)
@@ -417,7 +423,7 @@ for mi = 1 : length(mice)
                                     end
                                 end
                                 if broadNum == length(broadInd)
-                                    unimodalBroadCell(i) = 1;                                    
+                                    unimodalBroadCell(i) = 1;
                                 else
                                     multimodalCell(i) = 1;
                                 end
